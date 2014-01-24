@@ -45,20 +45,6 @@ install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 /usr/sbin/*
 /usr/share/man/man8/*
 
-%post
-DATEADDED=`date +%D\ %T`
-TMPFILE='/tmp/hostinfo.tmp.cijAkjd283l13'
-STMP=`basename $TMPFILE`
-
-SHELLS="/root/.bashrc"
-for THISHELL in $SHELLS
-do
-  test -e $THISHELL && sed -i -e '/^alias hi=/d' -e '/^# Added by hostinfo/d' $THISHELL
-  echo "# Added by hostinfo RPM on $DATEADDED" >> $THISHELL
-  echo "alias hi='clear; hostinfo'" >> $THISHELL
-  echo "hostinfo" >> $THISHELL
-done
-
 %changelog
 * Fri Jan 24 2014 jrecord@suse.com
 - added kernel taint and install time

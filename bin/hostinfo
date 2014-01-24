@@ -1,8 +1,9 @@
 #!/bin/bash
-SVER=0.55-2
+# Description: Displays basic system information
+# Modified:    2014 Jan 2014
+
 ##############################################################################
-#  hostinfo - Displays brief system information
-#
+#  Copyright (C) 2014 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -19,42 +20,90 @@ SVER=0.55-2
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 #  Authors/Contributors:
-#     Jason Record (jrecord@novell.com)
+#     Jason Record (jrecord@suse.com)
 #
 ##############################################################################
 
-OPT_DISPLAY_DISK_FREE=0
+##############################################################################
+# variables
+##############################################################################
+SVER=0.8.1
 PAD=20
-DEFAULT_DELAY=30
-DELAY=0
-TARGET_ISSUE=0
-ISSUE_FILE=/etc/issue
-OWNER="/opt/hostinfo-owner.txt"
-FUNCT="/opt/hostinfo-function.txt"
-MISSING=$(mktemp /tmp/hostinfo.missing.XXXXXXXXXXXXXX)
-rm -f $MISSING
+FORMAT_OUT="%-${PAD}s %s\n"
+MISSING=$(mktemp /tmp/hostinfo.mission.XXXXXXXXXXXXXXX)
+OPT_DISPLAY_DISK_FREE=0
 
-get_html_vars() {
-	ROW_OUT="<tr><td width=\"150\">%s</td><td>%s</td></tr>\n"
-	HEAD_OUT="<h2><font face=\"courier\">%s</font></h2>\n"
-	TABLE_ON="<table>\n"
-	TABLE_OFF="</table>\n"
-	HEADER="<html><head><title>hostinfo - $(hostname)</title></head><body>\n"
-	FOOTER="</body></html>\n"
-	BLANK="<tr><td>&nbsp;</td><td>&nbsp;</td></tr>\n"
+##############################################################################
+# functions
+##############################################################################
+
+showHostname()
+{
+	printf "$FORMAT_OUT" "Hostname:" "$(hostname)"
 }
 
-get_vt_vars() {
-	ROW_OUT="%-${PAD}s %s\n"
-	HEAD_OUT="%s\n"
-	TABLE_ON=""
-	TABLE_OFF=""
-	HEADER=""
-	FOOTER="\n"
-	BLANK="\n"
+showDate()
+{
+	printf "$FORMAT_OUT" "Current Date:" "$(date '+%c')"
 }
 
-printaddr() {
+showDistribution()
+{
+	printf "$FORMAT_OUT" "Distribution:" "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)"
+	printf "$FORMAT_OUT" "Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')"
+}
+
+showPackages()
+{
+	COUNT=$(rpm -qa --queryformat "%{VENDOR}\n" | egrep -vi "SUSE LINUX|(none)" | wc -l)
+	printf "$FORMAT_OUT" "Non-Vendor Packages:" "$COUNT"
+}
+
+showKernel()
+{
+	KERNEL_STR=$(uname -r)
+	printf "$FORMAT_OUT" "Architecture:" "$(uname -i)"
+	printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR"
+	KERN_RPM="kernel-$(echo $KERNEL_STR | awk -F- '{print $NF}')"
+	KERN_DATE=$(rpm -q --queryformat "%{INSTALLTIME:date}" $KERN_RPM 2>/dev/null)
+	if [[ -n "$KERN_DATE" ]]; then
+		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE"
+	else
+		printf "$FORMAT_OUT" " -Installed:" "Unknown"
+	fi
+	TAINT=$(cat /proc/sys/kernel/tainted)
+	TAINTED=0
+	if [ ${#TAINT} -gt 1 ]; then
+		TAINTED=1
+	elif [ ${TAINT} -gt 0 ]; then
+		TAINTED=1
+	fi
+	if (( TAINTED )); then
+		# TAINT=$(( 1 + 2 + 4 + 8 + 16 + 32 + 64 + 128 + 256 ))
+		# Refer to /usr/src/linux/include/linux/kernel.h and /usr/src/linux/kernel/panic.c (print_tainted function)
+		TAINT_STRING=""
+		test $((TAINT & 1))          -ne 0 && TAINT_STRING="${TAINT_STRING}P" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 2))          -ne 0 && TAINT_STRING="${TAINT_STRING}F" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 4))          -ne 0 && TAINT_STRING="${TAINT_STRING}S" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 8))          -ne 0 && TAINT_STRING="${TAINT_STRING}R" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 16))         -ne 0 && TAINT_STRING="${TAINT_STRING}M" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 32))         -ne 0 && TAINT_STRING="${TAINT_STRING}B" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 64))         -ne 0 && TAINT_STRING="${TAINT_STRING}U" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 128))        -ne 0 && TAINT_STRING="${TAINT_STRING}D" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 256))        -ne 0 && TAINT_STRING="${TAINT_STRING}A" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 512))        -ne 0 && TAINT_STRING="${TAINT_STRING}W" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 1024))       -ne 0 && TAINT_STRING="${TAINT_STRING}C" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 1073741824)) -ne 0 && TAINT_STRING="${TAINT_STRING}N" || TAINT_STRING="${TAINT_STRING} "
+		test $((TAINT & 2147483648)) -ne 0 && TAINT_STRING="${TAINT_STRING}X" || TAINT_STRING="${TAINT_STRING} "
+		printf "$FORMAT_OUT" " -Status:" "Tainted: $TAINT_STRING"
+	else
+		printf "$FORMAT_OUT" " -Status:" "Not Tainted"
+	fi
+
+}
+
+showNetAddr()
+{
 	BINIP=$(which ip 2>/dev/null)
 	test -z "$BINIP" && BINIP=$MISSING
 	if [ -x $BINIP ]; then
@@ -81,7 +130,7 @@ printaddr() {
 			test -z "$IPAR" && IPAR="None"
 
 			IPDISPLAY=$(printf "%-15s %-7s (%s)" $IPAR $IFAC $IPRO)
-			printf "$ROW_OUT" "IPv4 Address:" "$IPDISPLAY"
+			printf "$FORMAT_OUT" "IPv4 Address:" "$IPDISPLAY"
 		done
 	else
 		INTERFACES=$(find /etc/sysconfig/network -type f 2>/dev/null | egrep "ifcfg-eth|ifcfg-wlan" 2>/dev/null)
@@ -93,12 +142,18 @@ printaddr() {
 			else
 				IPDISPLAY=$(printf "%-15s (%s)" $IPADDR $BOOTPROTO)
 			fi
-			printf "$ROW_OUT" "IPv4 Address:" "$IPDISPLAY"
+			printf "$FORMAT_OUT" "IPv4 Address:" "$IPDISPLAY"
 		done
 	fi
 }
 
-printdisks() {
+showMemory()
+{
+	printf "$FORMAT_OUT" "Total/Free Memory:" "$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')/$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}') MB"
+}
+
+showDisks()
+{
 	DISK_SIZES=$(egrep '[s,h,xv,c][0-9]?d[a-z,0-9]$' /proc/partitions | awk '{printf "%s %u %s\n", "/dev/"$4, $3*1024/1000^3, "GB"}')
 	if [ -z "$DISK_SIZES" ]; then
 		DISK_SIZES=Unknown
@@ -119,110 +174,24 @@ printdisks() {
 		else
 			THIS_DISK=$DISK_INFO
 		fi
-		printf "$ROW_OUT" "Hard Disk:" "$THIS_DISK"
+		printf "$FORMAT_OUT" "Hard Disk:" "$THIS_DISK"
 	done
 }
 
-root_access() {
-	if [ $UID -eq 0 ]; then
-		return 0
-	else
-		return 1
-	fi
-}
+##############################################################################
+# main
+##############################################################################
 
-
-showtag ()
-{
-	printf "$HEADER"
-	printf "$HEAD_OUT" "--[ hostinfo v${SVER} ]----------------------------------------"
-	printf "$TABLE_ON"
-	printf "$ROW_OUT" Hostname: "$(hostname)"
-	printf "$ROW_OUT" "Current As Of:" "$(date '+%D %T')"
-	printf "$ROW_OUT" Distribution: "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)"
-	printf "$ROW_OUT" "Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')"
-	printf "$ROW_OUT" "Kernel Version:" "$(uname -r)"
-	printf "$ROW_OUT" Architecture: "$(uname -i)"
-	printaddr
-	printf "$ROW_OUT" "Total/Free Memory:" "$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')/$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}') MB"
-	printdisks
-	if (( TARGET_ISSUE )); then
-		printf "$ROW_OUT" "Terminal:" "\l"
-	else
-		printf "$ROW_OUT" "User Logged In:" "$(id | awk '{print $1, $2}') on $(tty | sed -e 's!/dev!!g;s!/!!g')"
-	fi
-	test -e $OWNER -o -e $FUNCT && printf "$BLANK"
-	test -e $OWNER && printf "$ROW_OUT" Owner: "$(cat $OWNER)"
-	test -e $FUNCT && printf "$ROW_OUT" Function: "$(cat $FUNCT)"
-	printf "$TABLE_OFF"
-	printf "$HEAD_OUT" "---------------------------------------------------------------"
-	printf "$FOOTER"
-}
-
-show_help() {
-	echo 
-	echo "Usage: $0 [-hfitw][-T sec]"
-	echo "  -h      Help screen."
-	echo "  -f      Include free disk space information."
-	echo "  -t      Sleep timer for 30 seconds."
-	echo "  -T sec  Sleep timer for sec seconds."
-	echo "  -w      Write to stdout with HTML tags. Useful for creating an index.html."
-	echo
-}
-
-get_vt_vars
-ALL_ARGS="$@"
-
-while getopts :hfitT:w TMPOPT
-do
-	case $TMPOPT in
-	\:)	case $OPTARG in
-			*) echo "$0 $ALL_ARGS"
-				echo "ERROR: Missing Argument -$OPTARG"
-				echo; show_help
-				;;
-			esac
-			echo; exit 0 ;;
-	\?)	case $OPTARG in
-			*) echo "$0 $ALL_ARGS"
-				echo "ERROR: Invalid Option -$OPTARG"
-				echo; show_help
-				;;
-			esac
-			echo; exit 0 ;;
-	h) show_help; exit 0 ;;
-	w) get_html_vars ;;
-	T) DELAY=$OPTARG ;;
-	t) DELAY=$DEFAULT_DELAY ;;
-	f) OPT_DISPLAY_DISK_FREE=1 ;;
-	i) if root_access; then
-			TARGET_ISSUE=1
-		else
-			echo "ERROR: root access required"
-			echo "       Login as root and retry"
-			echo; exit 1
-		fi ;;
-	esac
-done
-
-if (( DELAY )); then
-	while :
-	do
-		clear
-		showtag
-		for (( CNT=$DELAY; CNT > 0; CNT-- ))
-		do
-			printf "Refresh In %02i Seconds, Press Ctrl-C to Stop.\r" $CNT
-			sleep 1
-		done
-	done
-else
-	if (( TARGET_ISSUE )); then
-		test -e ${ISSUE_FILE}.hostinfo.back || cp -a ${ISSUE_FILE} ${ISSUE_FILE}.hostinfo.back
-		showtag > ${ISSUE_FILE}
-	else
-		showtag
-	fi
-fi
-exit 0
-
+echo '--------------------------------------------'
+showHostname
+showDate
+showDistribution
+#showPackages
+#showUpdates
+showKernel
+showNetAddr
+showMemory
+showDisks
+echo '--------------------------------------------'
+rm -rf $MISSING
+echo

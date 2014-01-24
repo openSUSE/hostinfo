@@ -1,15 +1,7 @@
-#
-# spec file for package hostinfo (Version 0.55.1)
-#
-# Copyright (C) 2005-2007 Novell, Inc.
+# Copyright (C) 2014 SUSE LLC
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
-# Please submit bugfixes or comments via http://www.suse.de/feedback/
-#
-
-# norootforbuild
-# neededforbuild  
 
 Name:         hostinfo
 Summary:      Gathers basic server information
@@ -20,7 +12,7 @@ Vendor:       SUSE Support
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      0.9
-Release:      0
+Release:      1
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -44,14 +36,14 @@ gzip -9f man/*
 pwd;ls -la
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/usr/sbin
-install -d $RPM_BUILD_ROOT/usr/share/man/man1
+install -d $RPM_BUILD_ROOT/usr/share/man/man8
 install -m 755 bin/* $RPM_BUILD_ROOT/usr/sbin
-install -m 644 man/*.1.gz $RPM_BUILD_ROOT/usr/share/man/man1
+install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 
 %files
 %defattr(-,root,root)
 /usr/sbin/*
-/usr/share/man/man1/*
+/usr/share/man/man8/*
 
 %post
 DATEADDED=`date +%D\ %T`
@@ -69,5 +61,6 @@ done
 
 %changelog
 * Fri Jan 24 2014 jrecord@suse.com
+- added kernel taint and install time
 - initial
 

@@ -2,27 +2,9 @@
 .SH NAME
 hostinfo - Gathers basic host information
 .SH SYNOPSIS
-hostinfo [-htf][-T sec]
+hostinfo 
 .SH DESCRIPTION
 Basic information about the host is gathered and displayed in a tag or label type format. 
-.SH OPTIONS
-.TP
-.B \-h
-Help screen.
-.TP
-.B \-f
-Include free disk space information.
-.TP
-.B \-t
-Sleep timer for 30 seconds.
-.TP
-.B \-T sec
-Sleep timer for
-.B sec
-seconds.
-.TP
-.B \-w
-Write to stdout with HTML tags. Useful for creating an index.html.
 .SH KNOWN ISSUES
 Displaying free disk space is limited to the devices shown in /proc/partitions, that are
 mounted with the same /proc/partitions device name.

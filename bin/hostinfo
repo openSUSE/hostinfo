@@ -1,0 +1,228 @@
+#!/bin/bash
+SVER=0.55-2
+##############################################################################
+#  hostinfo - Displays brief system information
+#
+##############################################################################
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 of the License.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#  Authors/Contributors:
+#     Jason Record (jrecord@novell.com)
+#
+##############################################################################
+
+OPT_DISPLAY_DISK_FREE=0
+PAD=20
+DEFAULT_DELAY=30
+DELAY=0
+TARGET_ISSUE=0
+ISSUE_FILE=/etc/issue
+OWNER="/opt/hostinfo-owner.txt"
+FUNCT="/opt/hostinfo-function.txt"
+MISSING=$(mktemp /tmp/hostinfo.missing.XXXXXXXXXXXXXX)
+rm -f $MISSING
+
+get_html_vars() {
+	ROW_OUT="<tr><td width=\"150\">%s</td><td>%s</td></tr>\n"
+	HEAD_OUT="<h2><font face=\"courier\">%s</font></h2>\n"
+	TABLE_ON="<table>\n"
+	TABLE_OFF="</table>\n"
+	HEADER="<html><head><title>hostinfo - $(hostname)</title></head><body>\n"
+	FOOTER="</body></html>\n"
+	BLANK="<tr><td>&nbsp;</td><td>&nbsp;</td></tr>\n"
+}
+
+get_vt_vars() {
+	ROW_OUT="%-${PAD}s %s\n"
+	HEAD_OUT="%s\n"
+	TABLE_ON=""
+	TABLE_OFF=""
+	HEADER=""
+	FOOTER="\n"
+	BLANK="\n"
+}
+
+printaddr() {
+	BINIP=$(which ip 2>/dev/null)
+	test -z "$BINIP" && BINIP=$MISSING
+	if [ -x $BINIP ]; then
+		INTERFACES=$($BINIP a | egrep '^[0-9]' | sed -e 's/ //g' | egrep ':eth|:wlan|:vmnet')
+		for INTERFACE in $INTERFACES
+		do
+			INUM=$(echo $INTERFACE | cut -d: -f1)
+			IFAC=$(echo $INTERFACE | cut -d: -f2)
+			IPAR=$($BINIP a | grep -A2 ^$INUM | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1 )
+			IMAC=$($BINIP a | grep -A2 ^$INUM | grep 'link/ether' | awk '{print $2}')
+			IPRO=$IMAC
+			NETFILE=$MISSING
+			case $IFAC in
+			eth*)
+				NETFILE="/etc/sysconfig/network/ifcfg-eth-id-$IMAC"
+				test -s $NETFILE || NETFILE="/etc/sysconfig/network/ifcfg-$IFAC"
+				;;
+			wlan*)
+				NETFILE="/etc/sysconfig/network/ifcfg-wlan-id-$IMAC"
+				test -s $NETFILE || NETFILE="/etc/sysconfig/network/ifcfg-$IFAC"
+				;;
+			esac
+			test -s $NETFILE -a -r $NETFILE && { . $NETFILE; IPRO=$BOOTPROTO; }
+			test -z "$IPAR" && IPAR="None"
+
+			IPDISPLAY=$(printf "%-15s %-7s (%s)" $IPAR $IFAC $IPRO)
+			printf "$ROW_OUT" "IPv4 Address:" "$IPDISPLAY"
+		done
+	else
+		INTERFACES=$(find /etc/sysconfig/network -type f 2>/dev/null | egrep "ifcfg-eth|ifcfg-wlan" 2>/dev/null)
+		for INTERFACE in $INTERFACES
+		do
+			. $INTERFACE
+			if [ -z "$IPADDR" ]; then
+				IPDISPLAY="($BOOTPROTO)"
+			else
+				IPDISPLAY=$(printf "%-15s (%s)" $IPADDR $BOOTPROTO)
+			fi
+			printf "$ROW_OUT" "IPv4 Address:" "$IPDISPLAY"
+		done
+	fi
+}
+
+printdisks() {
+	DISK_SIZES=$(egrep '[s,h,xv,c][0-9]?d[a-z,0-9]$' /proc/partitions | awk '{printf "%s %u %s\n", "/dev/"$4, $3*1024/1000^3, "GB"}')
+	if [ -z "$DISK_SIZES" ]; then
+		DISK_SIZES=Unknown
+	fi
+	echo "$DISK_SIZES" | while read DISK_INFO
+	do
+		DEV_CHECK=$(echo $DISK_INFO | awk '{print $1}')
+		DISK_FREE=0
+		if (( OPT_DISPLAY_DISK_FREE )); then
+			for DISK_ADD in $(df | grep ^${DEV_CHECK} | awk '{print $4}')
+			do
+				DISK_FREE=$(( DISK_FREE + DISK_ADD ))
+			done
+		fi
+		if (( DISK_FREE )); then
+			DISK_INFO="$DISK_INFO $DISK_FREE"
+			THIS_DISK=$(echo $DISK_INFO | awk '{printf "%s %u/%u %s\n", $1, $2, $4*1024/1000^3, $3}')
+		else
+			THIS_DISK=$DISK_INFO
+		fi
+		printf "$ROW_OUT" "Hard Disk:" "$THIS_DISK"
+	done
+}
+
+root_access() {
+	if [ $UID -eq 0 ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+
+showtag ()
+{
+	printf "$HEADER"
+	printf "$HEAD_OUT" "--[ hostinfo v${SVER} ]----------------------------------------"
+	printf "$TABLE_ON"
+	printf "$ROW_OUT" Hostname: "$(hostname)"
+	printf "$ROW_OUT" "Current As Of:" "$(date '+%D %T')"
+	printf "$ROW_OUT" Distribution: "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)"
+	printf "$ROW_OUT" "Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')"
+	printf "$ROW_OUT" "Kernel Version:" "$(uname -r)"
+	printf "$ROW_OUT" Architecture: "$(uname -i)"
+	printaddr
+	printf "$ROW_OUT" "Total/Free Memory:" "$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')/$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}') MB"
+	printdisks
+	if (( TARGET_ISSUE )); then
+		printf "$ROW_OUT" "Terminal:" "\l"
+	else
+		printf "$ROW_OUT" "User Logged In:" "$(id | awk '{print $1, $2}') on $(tty | sed -e 's!/dev!!g;s!/!!g')"
+	fi
+	test -e $OWNER -o -e $FUNCT && printf "$BLANK"
+	test -e $OWNER && printf "$ROW_OUT" Owner: "$(cat $OWNER)"
+	test -e $FUNCT && printf "$ROW_OUT" Function: "$(cat $FUNCT)"
+	printf "$TABLE_OFF"
+	printf "$HEAD_OUT" "---------------------------------------------------------------"
+	printf "$FOOTER"
+}
+
+show_help() {
+	echo 
+	echo "Usage: $0 [-hfitw][-T sec]"
+	echo "  -h      Help screen."
+	echo "  -f      Include free disk space information."
+	echo "  -t      Sleep timer for 30 seconds."
+	echo "  -T sec  Sleep timer for sec seconds."
+	echo "  -w      Write to stdout with HTML tags. Useful for creating an index.html."
+	echo
+}
+
+get_vt_vars
+ALL_ARGS="$@"
+
+while getopts :hfitT:w TMPOPT
+do
+	case $TMPOPT in
+	\:)	case $OPTARG in
+			*) echo "$0 $ALL_ARGS"
+				echo "ERROR: Missing Argument -$OPTARG"
+				echo; show_help
+				;;
+			esac
+			echo; exit 0 ;;
+	\?)	case $OPTARG in
+			*) echo "$0 $ALL_ARGS"
+				echo "ERROR: Invalid Option -$OPTARG"
+				echo; show_help
+				;;
+			esac
+			echo; exit 0 ;;
+	h) show_help; exit 0 ;;
+	w) get_html_vars ;;
+	T) DELAY=$OPTARG ;;
+	t) DELAY=$DEFAULT_DELAY ;;
+	f) OPT_DISPLAY_DISK_FREE=1 ;;
+	i) if root_access; then
+			TARGET_ISSUE=1
+		else
+			echo "ERROR: root access required"
+			echo "       Login as root and retry"
+			echo; exit 1
+		fi ;;
+	esac
+done
+
+if (( DELAY )); then
+	while :
+	do
+		clear
+		showtag
+		for (( CNT=$DELAY; CNT > 0; CNT-- ))
+		do
+			printf "Refresh In %02i Seconds, Press Ctrl-C to Stop.\r" $CNT
+			sleep 1
+		done
+	done
+else
+	if (( TARGET_ISSUE )); then
+		test -e ${ISSUE_FILE}.hostinfo.back || cp -a ${ISSUE_FILE} ${ISSUE_FILE}.hostinfo.back
+		showtag > ${ISSUE_FILE}
+	else
+		showtag
+	fi
+fi
+exit 0
+

@@ -1,0 +1,49 @@
+-------------------------------------------------------------------
+Tue Jul 29 09:54:35 MDT 2008 - jrecord@novell.com
+
+-added /etc/issue support (bnc#409680)
+-added the tty to User Logged In
+
+-------------------------------------------------------------------
+Wed Jul 09 13:06:48 MDT 2008 - jrecord@novell.com
+
+-New version: 0.51-8
+-added hostinfo(1) man page (bnc#407644)
+-added total free disk with -f (bnc#404648)
+-added total free memory (bnc#404647)
+-added -t and -T <sec> timers (bnc#404352)
+
+-------------------------------------------------------------------
+Thu Jun 12 13:34:00 MDT 2008 - jrecord@novell.com
+
+-New version: 0.46-12
+-added OBS commit to Makefile
+-fixed permission denied error (bnc#399760)
+
+-------------------------------------------------------------------
+Wed Jun 11 08:22:06 MDT 2008 - jrecord@novell.com
+
+-added wlan support (bnc#398297)
+-changed Memory from kB to MB
+-fixed network card checks (bnc#398241)
+-updated spec %post and removed %postun to be more clean (bnc#398240)
+
+-------------------------------------------------------------------
+Thu Jun  6 19:58:54 MDT 2008 - jrecord@novell.com
+
+-prepared spec file for OBS
+-fixed error when probing network files
+
+-------------------------------------------------------------------
+Mon Mar 10 14:29:32 MDT 2008 - jrecord@novell.com
+
+-added network file check
+-added <title> to -w output (dncs#43)
+-added cciss disk support (dncs#44)
+
+-------------------------------------------------------------------
+Tue Feb 26 11:35:32 MDT 2008 - jrecord@novell.com
+
+-added user independent disk check
+-displays multiple disks
+

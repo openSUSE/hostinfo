@@ -7,12 +7,10 @@ Name:         hostinfo
 Summary:      Gathers basic server information
 URL:          https://bitbucket.org/g23guy/hostinfo
 Group:        Documentation/SuSE
-Distribution: SUSE Linux Enterprise
-Vendor:       SUSE Support
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      0.9
-Release:      1
+Release:      2
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch

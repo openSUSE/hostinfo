@@ -1,4 +1,7 @@
-# Copyright (C) 2014 SUSE LLC
+# spec file for package hostinfo
+#
+# Copyright (c) 2014 SUSE LLC
+#
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
 #
@@ -10,7 +13,7 @@ Group:        Documentation/SuSE
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      0.9
-Release:      2
+Release:      3
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -44,7 +47,4 @@ install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 /usr/share/man/man8/*
 
 %changelog
-* Fri Jan 24 2014 jrecord@suse.com
-- added kernel taint and install time
-- initial
 

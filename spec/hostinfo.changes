@@ -1,0 +1,11 @@
+-------------------------------------------------------------------
+Thu Jan 30 23:51:43 UTC 2014 - jrecord@suse.com
+
+- Added hostinfo.changes
+
+-------------------------------------------------------------------
+Fri Jan 24 15:32:28 MST 2014 - jrecord@suse.com
+
+- added kernel taint and install time
+- initial
+

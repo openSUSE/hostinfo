@@ -13,7 +13,7 @@ Group:        Documentation/SuSE
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      1.0
-Release:      1
+Release:      2
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -47,6 +47,7 @@ install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 %defattr(-,root,root)
 /usr/sbin/*
 /usr/share/man/man8/*
+%dir /usr/share/doc/packages/%{name}
 %doc /usr/share/doc/packages/%{name}/*
 
 %changelog

@@ -12,8 +12,8 @@ URL:          https://bitbucket.org/g23guy/hostinfo
 Group:        Documentation/SuSE
 License:      GPL-2.0
 Autoreqprov:  on
-Version:      0.9
-Release:      3
+Version:      1.0
+Release:      1
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -31,13 +31,15 @@ Authors:
 %setup -q
 
 %build
-gzip -9f man/*
+gzip -9f man/*8
 
 %install
 pwd;ls -la
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/usr/sbin
 install -d $RPM_BUILD_ROOT/usr/share/man/man8
+install -d $RPM_BUILD_ROOT/usr/share/doc/packages/%{name}
+install -m 444 man/COPYING.GPLv2 $RPM_BUILD_ROOT/usr/share/doc/packages/%{name}
 install -m 755 bin/* $RPM_BUILD_ROOT/usr/sbin
 install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 
@@ -45,6 +47,7 @@ install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 %defattr(-,root,root)
 /usr/sbin/*
 /usr/share/man/man8/*
+%doc /usr/share/doc/packages/%{name}/*
 
 %changelog
 

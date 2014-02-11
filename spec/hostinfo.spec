@@ -13,7 +13,7 @@ Group:        Documentation/SuSE
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      1.0
-Release:      2
+Release:      3
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -49,6 +49,15 @@ install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
 /usr/share/man/man8/*
 %dir /usr/share/doc/packages/%{name}
 %doc /usr/share/doc/packages/%{name}/*
+
+%post
+echo 'hostinfo # Installed by hostinfo package' >> /root/.profile
+
+%postun
+if [[ -e /root/.profile ]]
+then
+	sed -i -e '/^hostinfo #/d' /root/.profile
+fi
 
 %changelog
 

@@ -1,29 +1,14 @@
-.TH hostinfo "8" "12 Feb 2014" "hostinfo" "Support Utilities Manual"
+.TH hostinfo-updates "8" "12 Feb 2014" "hostinfo-updates" "Support Utilities Manual"
 .SH NAME
-hostinfo - Gathers basic host information
+hostinfo-updates - Gathers information that takes a little longer
 .SH SYNOPSIS
-hostinfo [OPTIONS]
+hostinfo-updates [OPTIONS]
 .SH DESCRIPTION
-Basic information about the host is gathered and displayed in a tag or label type format. 
+Gathers information about patches and makes it avialable to hostinfo. Runs as a daily cron by default.
 .SH OPTIONS
 .TP
-\fB-h\fR
-Show this help screen.
-.TP
-\fB-n\fR
-Ignore network address output
-.TP
-\fB-m\fR
-Ignore memory output
-.TP
-\fB-d\fR
-Ignore disk checks and output
-.TP
-\fB-u\fR
-Ignore update output
-.TP
-\fB-f\fR
-Forces "Pending" updates. These updates are usually updated nightly by the hostinfo-updates process.
+\fB-v\fR
+Show verbose output, otherwise run silently. This is the only valid option.
 .SH AUTHOR
 Jason Record <jrecord@suse.com>
 .SH COPYRIGHT

@@ -1,5 +1,5 @@
 OBSPACKAGE=hostinfo
-SVNDIRS=bin man
+SVNDIRS=bin man conf
 VERSION=$(shell awk '/Version:/ { print $$2 }' spec/${OBSPACKAGE}.spec)
 RELEASE=$(shell awk '/Release:/ { print $$2 }' spec/${OBSPACKAGE}.spec)
 SRCDIR=$(OBSPACKAGE)-$(VERSION)
@@ -60,7 +60,7 @@ obclean: clean
 obs: dist
 	@echo [obs]: Preparing OBS Novell:NTS:Unstable/$(OBSPACKAGE) for checkin
 	@osc -A 'https://api.opensuse.org/' up Novell:NTS:Unstable/$(OBSPACKAGE)
-	@cp spec/$(OBSPACKAGE).spec Novell:NTS:Unstable/$(OBSPACKAGE)
+	@cp spec/* Novell:NTS:Unstable/$(OBSPACKAGE)
 	@cp src/$(SRCFILE).gz Novell:NTS:Unstable/$(OBSPACKAGE)
 
 obreplace: dist

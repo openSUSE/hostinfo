@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Wed Feb 12 19:55:57 UTC 2014 - jrecord@suse.com
+
+- Added hostinfo-updates to check patch information
+- Installs into .profile
+- Hostinfo-udpates links to cron.daily
+- Added startup switches for hostinfo
+- Updated man pages
+
+-------------------------------------------------------------------
 Thu Jan 30 23:51:43 UTC 2014 - jrecord@suse.com
 
 - Added hostinfo.changes

@@ -1,0 +1,7 @@
+# hostinfo initialization file
+#
+FILE_NON_VENDOR_PACKAGES='/usr/lib/hostinfo/count-non-vendor-packages'
+FILE_LAST_PACKAGE='/usr/lib/hostinfo/date-last-installed-package'
+FILE_PATCH_CHECK='/usr/lib/hostinfo/patch-check-needed-security'
+FILE_UPDATE_PACKAGES='/usr/lib/hostinfo/count-update-list'
+

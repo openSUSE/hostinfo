@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Feb 11
+# Modified:    2014 Feb 12
 
 ##############################################################################
 #  Copyright (C) 2014 SUSE LLC
@@ -27,15 +27,58 @@
 ##############################################################################
 # variables
 ##############################################################################
-SVER=0.8.2
-PAD=20
+SVER=0.8.3
+PAD=25
+FORCE_UPDATE=0
+IGNORE_UPDATES=0
+IGNORE_NET=0
+IGNORE_MEM=0
+IGNORE_DISK=0
+
 FORMAT_OUT="%-${PAD}s %s\n"
 MISSING=$(mktemp /tmp/hostinfo.missing.XXXXXXXXXXXXXXX)
 OPT_DISPLAY_DISK_FREE=0
+INIT_FILE='/etc/hostinforc'
+if [[ -s $INIT_FILE ]]
+then
+	. $INIT_FILE
+else
+	echo "ERROR: Missing hostinfo initialization file: $INIT_FILE"
+	echo
+	exit 1
+fi
 
 ##############################################################################
 # functions
 ##############################################################################
+showHelp()
+{
+	echo "hostinfo - Gathers host information"
+	echo
+	echo "USAGE: hostinfo [OPTIONS]"
+	echo "OPTIONS"
+	echo " -h This help screen"
+	echo " -n Ignore network address output"
+	echo " -m Ignore memory output"
+	echo " -d Ignore disk output"
+	echo " -u Ignore updates output"
+	echo " -f Force Pending updates"
+	echo
+}
+
+forceUpdate()
+{
+	hrLine
+	hostinfo-updates -v
+}
+
+exit_code() {
+	XC=$1
+	shift
+	MSG="$@"
+	[[ -n "$MSG" ]] && echo "$MSG"
+	exit $XC
+}
 
 showHostname()
 {
@@ -50,13 +93,7 @@ showDate()
 showDistribution()
 {
 	printf "$FORMAT_OUT" "Distribution:" "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)"
-	printf "$FORMAT_OUT" "Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')"
-}
-
-showPackages()
-{
-	COUNT=$(rpm -qa --queryformat "%{VENDOR}\n" | egrep -vi "SUSE LINUX|(none)" | wc -l)
-	printf "$FORMAT_OUT" "Non-Vendor Packages:" "$COUNT"
+	printf "$FORMAT_OUT" " -Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')"
 }
 
 showKernel()
@@ -102,49 +139,80 @@ showKernel()
 
 }
 
+hrLine()
+{
+	echo '-----------------------------------------------------------'
+}
+
 showNetAddr()
 {
-	BINIP=$(which ip 2>/dev/null)
-	test -z "$BINIP" && BINIP=$MISSING
-	if [ -x $BINIP ]; then
-		INTERFACES=$($BINIP a | egrep '^[0-9]' | sed -e 's/ //g' | egrep ':eth|:wlan|:vmnet')
-		for INTERFACE in $INTERFACES
-		do
-			INUM=$(echo $INTERFACE | cut -d: -f1)
-			IFAC=$(echo $INTERFACE | cut -d: -f2)
-			IPAR=$($BINIP a | grep -A2 ^$INUM | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1 )
-			IMAC=$($BINIP a | grep -A2 ^$INUM | grep 'link/ether' | awk '{print $2}')
-			IPRO=$IMAC
-			NETFILE=$MISSING
-			case $IFAC in
-			eth*)
-				NETFILE="/etc/sysconfig/network/ifcfg-eth-id-$IMAC"
-				test -s $NETFILE || NETFILE="/etc/sysconfig/network/ifcfg-$IFAC"
-				;;
-			wlan*)
-				NETFILE="/etc/sysconfig/network/ifcfg-wlan-id-$IMAC"
-				test -s $NETFILE || NETFILE="/etc/sysconfig/network/ifcfg-$IFAC"
-				;;
-			esac
-			test -s $NETFILE -a -r $NETFILE && { . $NETFILE; IPRO=$BOOTPROTO; }
-			test -z "$IPAR" && IPAR="None"
+   NET_LIST=$(ifconfig -a)
+   STATE=1
+   FIRST=1
+   IFACE=''
+   IADDR=''
+   echo "$NET_LIST" | while read LINE
+   do
+      if (( STATE ))
+      then
+         if [[ -n "$LINE" ]]
+         then
+            if (( FIRST ))
+            then
+               IFACE=$(echo $LINE | awk '{print $1}')
+               FIRST=0
+               [[ "$IFACE" == "lo" ]] && STATE=0
+            elif echo "$LINE" | grep "^inet addr:" &>/dev/null
+            then
+               IADDR=$(echo $LINE | cut -d' ' -f2 | cut -d\: -f2)
+            fi
+         elif [[ -z "$LINE" ]]
+         then
+				if [[ -n "$IADDR" ]]
+				then
+					printf "$FORMAT_OUT" "IPv4 Address:" "$IFACE $IADDR"
+				else
+					printf "$FORMAT_OUT" "IPv4 Address:" "$IFACE (Unconfigured)"
+				fi
+            IFACE=''
+            IADDR=''
+            STATE=1
+            FIRST=1
+         fi
+      elif [[ -z "$LINE" ]]
+      then
+         STATE=1
+         FIRST=1
+      fi
+   done
+}
 
-			IPDISPLAY=$(printf "%-15s %-7s (%s)" $IPAR $IFAC $IPRO)
-			printf "$FORMAT_OUT" "IPv4 Address:" "$IPDISPLAY"
-		done
+showUpdates()
+{
+	if [[ -s $FILE_LAST_PACKAGE ]]
+	then
+		OUTPUT=$(cat $FILE_LAST_PACKAGE)
 	else
-		INTERFACES=$(find /etc/sysconfig/network -type f 2>/dev/null | egrep "ifcfg-eth|ifcfg-wlan" 2>/dev/null)
-		for INTERFACE in $INTERFACES
-		do
-			. $INTERFACE
-			if [ -z "$IPADDR" ]; then
-				IPDISPLAY="($BOOTPROTO)"
-			else
-				IPDISPLAY=$(printf "%-15s (%s)" $IPADDR $BOOTPROTO)
-			fi
-			printf "$FORMAT_OUT" "IPv4 Address:" "$IPDISPLAY"
-		done
+		OUTPUT="Pending"
 	fi
+	printf "$FORMAT_OUT" "Last Updated Package:" "$OUTPUT"
+	if [[ -s $FILE_PATCH_CHECK ]]
+	then
+		OUTPUT_N=$(cat $FILE_PATCH_CHECK | cut -d\| -f1)
+		OUTPUT_S=$(cat $FILE_PATCH_CHECK | cut -d\| -f2)
+	else
+		OUTPUT_N="Pending"
+		OUTPUT_S="Pending"
+	fi
+	printf "$FORMAT_OUT" " -Patches Needed:" "$OUTPUT_N"
+	printf "$FORMAT_OUT" " -Security:" "$OUTPUT_S"
+	if [[ -s $FILE_NON_VENDOR_PACKAGES ]]
+	then
+		OUTPUT=$(cat $FILE_NON_VENDOR_PACKAGES)
+	else
+		OUTPUT="Pending"
+	fi
+	printf "$FORMAT_OUT" " -3rd Party Packages:" "$OUTPUT"
 }
 
 showMemory()
@@ -181,17 +249,40 @@ showDisks()
 ##############################################################################
 # main
 ##############################################################################
+while getopts :hfnmdu TMPOPT
+do
+	case $TMPOPT in
+	\:)	showHelp
+			case $OPTARG in
+			*) echo "ERROR: Missing Argument -$OPTARG"
+				;;
+			esac
+			echo; exit 1 ;;
+	\?)	showHelp
+			case $OPTARG in
+			*) echo "ERROR: Invalid Option -$OPTARG"
+				;;
+			esac
+			echo; exit 1 ;;
+	n) IGNORE_NET=1 ;;
+	m) IGNORE_MEM=1 ;;
+	d) IGNORE_DISK=1 ;;
+	u) IGNORE_UPDATES=1 ;;
+	h) showHelp; exit 0 ;;
+	f) FORCE_UPDATE=1 ;;
+	esac
+done
 
-echo '--------------------------------------------'
+(( FORCE_UPDATE )) && forceUpdate
+hrLine
 showHostname
 showDate
 showDistribution
-#showPackages
-#showUpdates
 showKernel
-showNetAddr
-showMemory
-showDisks
-echo '--------------------------------------------'
+(( IGNORE_UPDATES )) || showUpdates
+(( IGNORE_NET )) || showNetAddr
+(( IGNORE_MEM )) || showMemory
+(( IGNORE_DISK )) || showDisks
+hrLine
 rm -rf $MISSING
 echo

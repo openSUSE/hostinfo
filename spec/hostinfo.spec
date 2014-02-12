@@ -13,7 +13,7 @@ Group:        Documentation/SuSE
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      1.0
-Release:      6
+Release:      7
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
@@ -71,7 +71,7 @@ then
 		rm -f /root/.profile
 	fi
 fi
-rm -rf /usr/lib/%{name}
+rm -f /usr/lib/%{name}/*
 if [[ -L /etc/cron.daily/hostinfo-updates ]]
 then
 	rm -f /etc/cron.daily/hostinfo-updates

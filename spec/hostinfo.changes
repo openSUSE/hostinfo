@@ -1,6 +1,8 @@
 -------------------------------------------------------------------
-Tue Feb 25 19:35:17 UTC 2014 - jrecord@suse.com
+Tue Feb 25 20:12:51 UTC 2014 - jrecord@suse.com
 
+- Annotated hostinforc
+- Updated man page
 - Replaced hostinfo-updates with hostinfo-refreash
 - hostinfo-refreash is the cron.daily cron
 - Added hostinfo-refreash to cron.daily

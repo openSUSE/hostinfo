@@ -1,10 +1,35 @@
 # hostinfo initialization file
 #
-HOSTINFO_OPTS="-q"
-OPT_DISPLAY_DISK_FREE=0
+# Name:        FILE_ROOT_MOTD
+# Description: The hostinfo file created and viewed when root logs into the server.
+#
 FILE_ROOT_MOTD='/var/spool/hostinfo/root-motd'
-IGNORE_UPDATES=0
-IGNORE_NET=0
-IGNORE_MEM=0
+
+# Name:        IGNORE_DISK
+# Description: When set to 1, hostinfo will not query disk information to write to FILE_ROOT_MOTD
+# Values:      0 or 1
+# Default:     0
+#
 IGNORE_DISK=0
+
+# Name:        IGNORE_MEM
+# Description: When set to 1, hostinfo will not query memory information to write to FILE_ROOT_MOTD
+# Values:      0 or 1
+# Default:     0
+#
+IGNORE_MEM=0
+
+# Name:        IGNORE_NET
+# Description: When set to 1, hostinfo will not query network information to write to FILE_ROOT_MOTD
+# Values:      0 or 1
+# Default:     0
+#
+IGNORE_NET=0
+
+# Name:        IGNORE_UPDATES
+# Description: When set to 1, hostinfo will not query system update information to write to FILE_ROOT_MOTD
+# Values:      0 or 1
+# Default:     0
+#
+IGNORE_UPDATES=0
 

@@ -1,4 +1,4 @@
-.TH hostinfo "8" "12 Feb 2014" "hostinfo" "Support Utilities Manual"
+.TH hostinfo "8" "25 Feb 2014" "hostinfo" "Support Utilities Manual"
 .SH NAME
 hostinfo - Gathers basic host information
 .SH SYNOPSIS
@@ -22,8 +22,11 @@ Ignore disk checks and output
 \fB-u\fR
 Ignore update output
 .TP
-\fB-f\fR
-Forces "Pending" updates. These updates are usually updated nightly by the hostinfo-updates process.
+\fB-q\fR
+Create the hostinfo file quietly
+.TP
+\fB-v\fR
+Views the hostinfo file created by hostinfo, instead of updating the file
 .SH AUTHOR
 Jason Record <jrecord@suse.com>
 .SH COPYRIGHT

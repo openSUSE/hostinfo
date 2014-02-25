@@ -9,14 +9,15 @@
 Name:         hostinfo
 Summary:      Gathers basic server information
 URL:          https://bitbucket.org/g23guy/hostinfo
-Group:        Documentation/SuSE
+Group:        Documentation/SUSE
 License:      GPL-2.0
 Autoreqprov:  on
 Version:      1.0
-Release:      8
+Release:      9
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
+Requires:     cron
 
 %description
 A script that displays current system information to help 

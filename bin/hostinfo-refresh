@@ -1,0 +1,14 @@
+#!/bin/bash
+
+HOSTINFO_BIN="/usr/sbin/hostinfo"
+if [[ -s /etc/hostinforc ]]
+then
+	. /etc/hostinforc
+else
+	echo "Error: Missing /etc/hostinforc"
+	exit 2
+fi
+HOSTINFO_OPTS="$HOSTINFO_OPTS -q"
+
+$HOSTINFO_BIN $HOSTINFO_OPTS
+

@@ -18,6 +18,7 @@ Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}
 Buildarch:    noarch
 Requires:     cron
+Requires:     sed
 
 %description
 A script that displays current system information to help 

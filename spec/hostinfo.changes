@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Mar 13 16:54:44 UTC 2014 - jrecord@suse.com
+
+- Change to System/Monitoring spec Group
+
+-------------------------------------------------------------------
 Fri Feb 28 12:42:34 UTC 2014 - jrecord@suse.com
 
 - Requires sed

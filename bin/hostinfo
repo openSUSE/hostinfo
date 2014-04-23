@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Feb 25
+# Modified:    2014 Apr 23
 
 ##############################################################################
 #  Copyright (C) 2014 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.8
+SVER=1.0.9
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -156,6 +156,10 @@ showKernel()
 	else
 		KERN_TAINT_STR="Not Tainted"
 	fi
+	if uname -r | grep -v '^3\.1' &>/dev/null
+	then
+		KERN_TAINT_STR="Not Available"
+	fi
 
 	if (( QUIET ))
 	then
@@ -173,51 +177,59 @@ showKernel()
 
 showNetAddr()
 {
-   NET_LIST=$(ifconfig -a)
-   STATE=1
-   FIRST=1
-   IFACE=''
-   IADDR=''
-   echo "$NET_LIST" | while read LINE
-   do
-      if (( STATE ))
-      then
-         if [[ -n "$LINE" ]]
-         then
-            if (( FIRST ))
-            then
-               IFACE=$(echo $LINE | awk '{print $1}')
-               FIRST=0
-               [[ "$IFACE" == "lo" ]] && STATE=0
-            elif echo "$LINE" | grep "^inet addr:" &>/dev/null
-            then
-               IADDR=$(echo $LINE | cut -d' ' -f2 | cut -d\: -f2)
-            fi
-         elif [[ -z "$LINE" ]]
-         then
+	NET_LIST=$(ifconfig -a)
+	STATE=1
+	FIRST=1
+	IFACE=''
+	IADDR=''
+	SLAVE=0
+	echo "$NET_LIST" | while read LINE
+	do
+		#echo "STATE=$STATE FIRST=$FIRST IFACE=$IFACE $LINE"
+		if (( STATE ))
+		then
+			if (( FIRST ))
+			then
+				IFACE=$(echo $LINE | awk '{print $1}')
+				FIRST=0
+				[[ "$IFACE" == "lo" ]] && STATE=0
+			elif echo "$LINE" | grep "^inet addr:" &>/dev/null
+			then
+				IADDR=$(echo $LINE | cut -d' ' -f2 | cut -d\: -f2)
+			elif echo "$LINE" | grep SLAVE &>/dev/null
+			then
+				SLAVE=1
+			elif echo "$LINE" | grep "TX packet" &>/dev/null
+			then
 				if [[ -n "$IADDR" ]]
 				then
 					IPADDR_STR="$IFACE $IADDR"
 				else
-					IPADDR_STR="$IFACE (Unconfigured)"
+					if (( SLAVE ))
+					then
+						IPADDR_STR="$IFACE (Bond Slave)"
+					else
+						IPADDR_STR="$IFACE (Unconfigured)"
+					fi
 				fi
-            IFACE=''
-            IADDR=''
-            STATE=1
-            FIRST=1
+				IFACE=''
+				IADDR=''
+				STATE=0
+				FIRST=0
 				if (( QUIET ))
 				then
 					printf "$FORMAT_OUT" "IPv4 Address:" "$IPADDR_STR" >> $FILE_ROOT_MOTD
 				else
 					printf "$FORMAT_OUT" "IPv4 Address:" "$IPADDR_STR" | tee -a $FILE_ROOT_MOTD
 				fi
-         fi
-      elif [[ -z "$LINE" ]]
-      then
-         STATE=1
-         FIRST=1
-      fi
-   done
+			fi
+		elif [[ -z "$LINE" ]]
+		then
+			STATE=1
+			FIRST=1
+			SLAVE=0
+		fi
+	done
 }
 
 showUpdates()

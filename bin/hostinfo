@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.9
+SVER=1.0.10
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -156,9 +156,11 @@ showKernel()
 	else
 		KERN_TAINT_STR="Not Tainted"
 	fi
-	if uname -r | grep -v '^3\.1' &>/dev/null
+	if grep -i "suse linux enterprise" /etc/SuSE-release | grep 12 &>/dev/null
 	then
-		KERN_TAINT_STR="Not Available"
+		SHOW_TAINT=1
+	else
+		SHOW_TAINT=0
 	fi
 
 	if (( QUIET ))
@@ -166,12 +168,12 @@ showKernel()
 		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" >> $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" >> $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" >> $FILE_ROOT_MOTD
-		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" >> $FILE_ROOT_MOTD
+		(( SHOW_TAINT )) && printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" >> $FILE_ROOT_MOTD
 	else
 		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" | tee -a $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" | tee -a $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" | tee -a $FILE_ROOT_MOTD
-		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" | tee -a $FILE_ROOT_MOTD
+		(( SHOW_TAINT )) && printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" | tee -a $FILE_ROOT_MOTD
 	fi
 }
 
@@ -244,10 +246,10 @@ showUpdates()
 		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" | tee -a $FILE_ROOT_MOTD
 	fi
 
-	REPOS=$(zypper --non-interactive --no-gpg-checks repos | grep '^[[:digit:]]' | wc -l)
+	REPOS=$(zypper --non-interactive --no-gpg-checks repos 2>/dev/null | grep '^[[:digit:]]' | wc -l)
 	if (( REPOS > 1 ))
 	then
-		PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check | tail -1 | grep -i patches 2>/dev/null)
+		PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
 		if [[ -n "$PATCH_STRING" ]]
 		then
 			PATCH_COUNT_NEEDED=$(echo $PATCH_STRING | cut -d' ' -f1)

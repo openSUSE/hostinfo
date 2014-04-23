@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Wed Apr 23 21:02:04 UTC 2014 - jrecord@suse.com
+Wed Apr 23 21:25:34 UTC 2014 - jrecord@suse.com
 
+- Only show taint status for SLE12
 - Fixed missing interface (bnc#874878)
 
 -------------------------------------------------------------------

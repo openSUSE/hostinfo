@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Apr 23
+# Modified:    2014 Apr 25
 
 ##############################################################################
 #  Copyright (C) 2014 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.10
+SVER=1.0.11
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -94,6 +94,14 @@ emptyLine()
 	else
 		echo | tee -a $FILE_ROOT_MOTD
 	fi
+}
+
+mask2cdr ()
+{
+	local ones=${1##*255.}
+	set -- 0^^^128^192^224^240^248^252^254^ $(( (${#1} - ${#ones})*2 )) ${ones%%.*}
+	ones=${1%%$3*}
+	echo $(( $2 + (${#ones}/4) ))
 }
 
 showDate()
@@ -198,6 +206,8 @@ showNetAddr()
 			elif echo "$LINE" | grep "^inet addr:" &>/dev/null
 			then
 				IADDR=$(echo $LINE | cut -d' ' -f2 | cut -d\: -f2)
+				IMASK=$(echo $LINE | awk '{print $NF}' | cut -d\: -f2)
+				CIDR=$(mask2cdr $IMASK)
 			elif echo "$LINE" | grep SLAVE &>/dev/null
 			then
 				SLAVE=1
@@ -205,7 +215,7 @@ showNetAddr()
 			then
 				if [[ -n "$IADDR" ]]
 				then
-					IPADDR_STR="$IFACE $IADDR"
+					IPADDR_STR="$IFACE ${IADDR}/${CIDR}"
 				else
 					if (( SLAVE ))
 					then

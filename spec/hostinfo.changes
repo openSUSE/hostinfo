@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Wed Apr 23 21:25:34 UTC 2014 - jrecord@suse.com
+Fri Apr 25 17:15:43 UTC 2014 - jrecord@suse.com
 
+- Added CIDR to IP address list
 - Only show taint status for SLE12
 - Fixed missing interface (bnc#874878)
 

@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Aug 14 16:00:26 UTC 2014 - jrecord@suse.com
+
+- Fixed 3rd party detection (bnc#891604)
+
+-------------------------------------------------------------------
 Fri Apr 25 17:15:43 UTC 2014 - jrecord@suse.com
 
 - Added CIDR to IP address list

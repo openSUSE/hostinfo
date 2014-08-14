@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Apr 25
+# Modified:    2014 Aug 14
 
 ##############################################################################
 #  Copyright (C) 2014 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.11
+SVER=1.0.12
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -281,7 +281,7 @@ showUpdates()
 		printf "$FORMAT_OUT" " -Security:" "$PATCH_COUNT_SECURITY" | tee -a $FILE_ROOT_MOTD
 	fi
 
-	COUNT_NVR=$(rpm -qa --queryformat "%{DISTRIBUTION}|%{NAME}\n" | egrep -iv "^SUSE:SLE-12:GA|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
+	COUNT_NVR=$(rpm -qa --queryformat "%{VENDOR}|%{NAME}\n" | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
 	if (( QUIET ))
 	then
 		printf "$FORMAT_OUT" " -3rd Party Packages:" "$COUNT_NVR" >> $FILE_ROOT_MOTD

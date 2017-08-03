@@ -256,7 +256,7 @@ showUpdates()
 		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" | tee -a $FILE_ROOT_MOTD
 	fi
 
-	REPOS=$(zypper --non-interactive --no-gpg-checks repos 2>/dev/null | grep '^[[:digit:]]' | wc -l)
+	REPOS=$(zypper --non-interactive --no-gpg-checks repos 2>/dev/null | grep '^[ ]\{0,1\}[[:digit:]]' | wc -l)
 	if (( REPOS > 1 ))
 	then
 		PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Aug 14
+# Modified:    2018 Jan 10
 
 ##############################################################################
-#  Copyright (C) 2014 SUSE LLC
+#  Copyright (C) 2018 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #  Authors/Contributors:
-#     Jason Record (jrecord@suse.com)
+#     Jason Record (jason.record@suse.com)
 #
 ##############################################################################
 
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.12
+SVER=1.1.0
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -116,13 +116,21 @@ showDate()
 
 showDistribution()
 {
+	RELEASE_FILE='/etc/os-release'
+	PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
+	DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
+	SPSTR="0"
+	if echo $PRETTY_NAME | grep SP &>/dev/null; then
+		SPTMP=$(echo $PRETTY_NAME | awk '{print $NF}')
+		SPSTR=${SPTMP##SP}
+	fi
 	if (( QUIET ))
 	then
-		printf "$FORMAT_OUT" "Distribution:" "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)" >> $FILE_ROOT_MOTD
-		printf "$FORMAT_OUT" " -Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')" >> $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" "Distribution:" "$DIST" >> $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" " -Service Pack:" "$SPSTR" >> $FILE_ROOT_MOTD
 	else
-		printf "$FORMAT_OUT" "Distribution:" "$(cat /etc/SuSE-release | grep SUSE | cut -d'(' -f1)" | tee -a $FILE_ROOT_MOTD
-		printf "$FORMAT_OUT" " -Service Pack:" "$(cat /etc/SuSE-release | grep PATCHLEVEL | awk '{print $3}')" | tee -a $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" "Distribution:" "$DIST" | tee -a $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" " -Service Pack:" "$SPSTR" | tee -a $FILE_ROOT_MOTD
 	fi
 }
 
@@ -138,37 +146,15 @@ showKernel()
 	fi
 	TAINT=$(cat /proc/sys/kernel/tainted)
 	TAINTED=0
-	if [ ${#TAINT} -gt 1 ]; then
+	if (( ${#TAINT} > 1 )); then
 		TAINTED=1
-	elif [ ${TAINT} -gt 0 ]; then
+	elif (( ${TAINT} > 0 )); then
 		TAINTED=1
 	fi
 	if (( TAINTED )); then
-		# TAINT=$(( 1 + 2 + 4 + 8 + 16 + 32 + 64 + 128 + 256 ))
-		# Refer to /usr/src/linux/include/linux/kernel.h and /usr/src/linux/kernel/panic.c (print_tainted function)
-		TAINT_STRING=""
-		test $((TAINT & 1))          -ne 0 && TAINT_STRING="${TAINT_STRING}P" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 2))          -ne 0 && TAINT_STRING="${TAINT_STRING}F" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 4))          -ne 0 && TAINT_STRING="${TAINT_STRING}S" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 8))          -ne 0 && TAINT_STRING="${TAINT_STRING}R" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 16))         -ne 0 && TAINT_STRING="${TAINT_STRING}M" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 32))         -ne 0 && TAINT_STRING="${TAINT_STRING}B" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 64))         -ne 0 && TAINT_STRING="${TAINT_STRING}U" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 128))        -ne 0 && TAINT_STRING="${TAINT_STRING}D" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 256))        -ne 0 && TAINT_STRING="${TAINT_STRING}A" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 512))        -ne 0 && TAINT_STRING="${TAINT_STRING}W" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 1024))       -ne 0 && TAINT_STRING="${TAINT_STRING}C" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 1073741824)) -ne 0 && TAINT_STRING="${TAINT_STRING}N" || TAINT_STRING="${TAINT_STRING} "
-		test $((TAINT & 2147483648)) -ne 0 && TAINT_STRING="${TAINT_STRING}X" || TAINT_STRING="${TAINT_STRING} "
-		KERN_TAINT_STR="Tainted: $TAINT_STRING"
+		KERN_TAINT_STR="Tainted: ${TAINT}"
 	else
 		KERN_TAINT_STR="Not Tainted"
-	fi
-	if grep -i "suse linux enterprise" /etc/SuSE-release | grep 12 &>/dev/null
-	then
-		SHOW_TAINT=1
-	else
-		SHOW_TAINT=0
 	fi
 
 	if (( QUIET ))
@@ -176,18 +162,18 @@ showKernel()
 		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" >> $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" >> $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" >> $FILE_ROOT_MOTD
-		(( SHOW_TAINT )) && printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" >> $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" >> $FILE_ROOT_MOTD
 	else
 		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" | tee -a $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" | tee -a $FILE_ROOT_MOTD
 		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" | tee -a $FILE_ROOT_MOTD
-		(( SHOW_TAINT )) && printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" | tee -a $FILE_ROOT_MOTD
+		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" | tee -a $FILE_ROOT_MOTD
 	fi
 }
 
 showNetAddr()
 {
-	NET_LIST=$(ifconfig -a)
+	NET_LIST=$(ip address show)
 	STATE=1
 	FIRST=1
 	IFACE=''

@@ -1,35 +1,32 @@
+# 
 # spec file for package hostinfo
 #
-# Copyright (c) 2014 SUSE LLC
+# Copyright (c) 2018 SUSE LINUX GmbH, Nuernberg, Germany.
 #
-# This file and all modifications and additions to the pristine
-# package are under the same license as the package itself.
-#
-# Source code developed at: 
-#  https://github.com/g23guy/hostinfo
+# All modifications and additions to the file contributed by third parties
+# remain the property of their copyright owners, unless otherwise agreed
+# upon. The license for this file, and modifications and additions to the
+# file, is the same license as for the pristine package itself (unless the
+# license for the pristine package is not an Open Source License, in which
+# case the license is the MIT License). An "Open Source License" is a
+# license that conforms to the Open Source Definition (Version 1.9)
+# published by the Open Source Initiative.
 
 Name:         hostinfo
+Version:      1.0
+Release:      0
 Summary:      Gathers basic server information
+License:      GPL-2.0
 URL:          https://github.com/g23guy/hostinfo
 Group:        System/Monitoring
-License:      GPL-2.0
-Autoreqprov:  on
-Version:      1.0
-Release:      17
 Source:       %{name}-%{version}.tar.gz
-BuildRoot:    %{_tmppath}/%{name}-%{version}
-Buildarch:    noarch
 Requires:     cron
 Requires:     sed
+Buildarch:    noarch
 
 %description
 A script that displays current system information to help 
 identify a host and it's resources.
-
-Authors:
---------
-    Jason Record <jrecord@suse.com>
- 
  
 %prep
 %setup -q
@@ -39,28 +36,26 @@ gzip -9f man/*8
 
 %install
 pwd;ls -la
-rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/etc
-install -d $RPM_BUILD_ROOT/etc/cron.daily
-install -d $RPM_BUILD_ROOT/usr/sbin
-install -d $RPM_BUILD_ROOT/usr/share/man/man8
-install -d $RPM_BUILD_ROOT/usr/share/doc/packages/%{name}
-install -d $RPM_BUILD_ROOT/var/spool/%{name}
-install -m 644 conf/hostinforc $RPM_BUILD_ROOT/etc
-install -m 444 man/COPYING.GPLv2 $RPM_BUILD_ROOT/usr/share/doc/packages/%{name}
-install -m 755 bin/hostinfo $RPM_BUILD_ROOT/usr/sbin
-install -m 755 bin/hostinfo-refresh $RPM_BUILD_ROOT/etc/cron.daily
-install -m 644 man/*.8.gz $RPM_BUILD_ROOT/usr/share/man/man8
+mkdir -p %{buildroot}%{_sysconfdir}/cron.daily
+mkdir -p %{buildroot}%{_sbindir}
+install -d %{buildroot}%{_mandir}/man8
+install -d %{buildroot}%{_docdir}/%{name}
+install -d %{buildroot}/var/spool/%{name}
+install -m 644 conf/hostinforc %{buildroot}%{_sysconfdir}
+install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
+install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
+install -m 755 bin/hostinfo-refresh %{buildroot}%{_sysconfdir}/cron.daily
+install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
 %files
 %defattr(-,root,root)
-/usr/sbin/*
-%config /etc/*
-/etc/cron.daily/*
-/usr/share/man/man8/*
+%{_sbindir}/hostinfo
+%config %{_sysconfdir}/hostinforc
+%{_sysconfdir}/cron.daily/hostinfo-refresh
+%{_mandir}/man8/*
 %dir %attr(0700,root,root) /var/spool/%{name}
-%dir /usr/share/doc/packages/%{name}
-%doc /usr/share/doc/packages/%{name}/*
+%dir %{_docdir}/%{name}
+%doc %{_docdir}/%{name}/*
 
 %post
 echo '[[ -s /var/spool/hostinfo/root-motd ]] && cat /var/spool/hostinfo/root-motd' >> /root/.profile

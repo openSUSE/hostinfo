@@ -175,7 +175,7 @@ showKernel()
 
 showNetAddr()
 {
-	NET_LIST=$(ip address show)
+	NET_LIST=$(ifconfig -a)
 	STATE=1
 	FIRST=1
 	IFACE=''
@@ -305,7 +305,7 @@ showMemory()
 showDisks()
 {
 	DISK_SIZES=$(egrep '[s,h,xv,c][0-9]?d[a-z,0-9]$' /proc/partitions | awk '{printf "%s %u %s\n", "/dev/"$4, $3*1024/1000^3, "GB"}')
-	if [ -z "$DISK_SIZES" ]; then
+	if [[ -z "$DISK_SIZES" ]]; then
 		DISK_SIZES=Unknown
 	fi
 	echo "$DISK_SIZES" | while read DISK_INFO

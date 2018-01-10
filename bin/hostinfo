@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.1.0
+SVER=1.1.5
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -137,8 +137,10 @@ showDistribution()
 showKernel()
 {
 	KERNEL_STR=$(uname -r)
-	KERN_RPM="kernel-$(echo $KERNEL_STR | awk -F- '{print $NF}')"
-	KERN_DATE=$(rpm -q --queryformat "%{INSTALLTIME:date}" $KERN_RPM 2>/dev/null)
+	KERNEL_TYPE=$(awk -F- '{print $NF}' <<< $KERNEL_STR)
+	KERN_RPM="kernel-${KERNEL_TYPE}"
+	KERN_RPM_VERSION="${KERN_RPM}-${KERNEL_STR%%-$KERNEL_TYPE}*"
+	KERN_DATE=$(rpm -q --queryformat "%{INSTALLTIME:date}" $KERN_RPM_VERSION 2>/dev/null)
 	if [[ -n "$KERN_DATE" ]]; then
 		KERN_DATE_STR="$KERN_DATE"
 	else

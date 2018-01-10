@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Wed Jan 10 20:27:58 UTC 2018 - jason.record@suse.com
+Wed Jan 10 20:43:20 UTC 2018 - jason.record@suse.com
 
+- Fixed kernel install time
 - Fixed taint and distribution tags
 - Fixed spec file for sle15
 

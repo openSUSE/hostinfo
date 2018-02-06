@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Tue Feb  6 18:49:31 UTC 2018 - jason.record@suse.com
+Tue Feb  6 19:07:38 UTC 2018 - jason.record@suse.com
 
+- Corrected memory with updated free output (bsc#1079662)
 - showNetAddr uses ip address instead of ifconfig
 
 -------------------------------------------------------------------

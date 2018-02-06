@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.2.1'
+SVER='1.2.2'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -307,19 +307,27 @@ showUpdates()
 
 showMemory()
 {
-	MEM_TOTAL=$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')
-	MEM_FREE=$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}')
 	if [[ -x /usr/bin/free ]]
 	then
-		MEM_CACHE=$(/usr/bin/free -k | grep '^-' | awk '{printf "%i", $NF/1024}')
-		MEM_PERCENT=$(printf "%i" $(( MEM_CACHE * 100 / MEM_TOTAL )))
+		FREE=$(free -h | grep "^Mem")
+		FREE_ARRAY=($FREE)
+		MEM_TOTAL=${FREE_ARRAY[1]}
+		MEM_FREE=${FREE_ARRAY[3]}
+		MEM_AVAIL=${FREE_ARRAY[-1]}
+		FREE=$(free -b | grep "^Mem")
+		FREE_ARRAY=($FREE)
+		CALC_TOTAL=${FREE_ARRAY[1]}
+		CALC_AVAIL=${FREE_ARRAY[-1]}
+		MEM_PERCENT=$(printf "%i" $(( CALC_AVAIL * 100 / CALC_TOTAL )))
 		if (( QUIET ))
 		then
-			printf "$FORMAT_OUT" "Total/Free/+Cache Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_CACHE} MB (${MEM_PERCENT}% Free)" >> $FILE_ROOT_MOTD
+			printf "$FORMAT_OUT" "Total/Free/Avail Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" >> $FILE_ROOT_MOTD
 		else
-			printf "$FORMAT_OUT" "Total/Free/+Cache Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_CACHE} MB (${MEM_PERCENT}% Free)" | tee -a $FILE_ROOT_MOTD
+			printf "$FORMAT_OUT" "Total/Free/Avail Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" | tee -a $FILE_ROOT_MOTD
 		fi
 	else
+		MEM_TOTAL=$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')
+		MEM_FREE=$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}')
 		if (( QUIET ))
 		then
 			printf "$FORMAT_OUT" "Total/Free Memory:" "${MEM_TOTAL}/${MEM_FREE} MB" >> $FILE_ROOT_MOTD

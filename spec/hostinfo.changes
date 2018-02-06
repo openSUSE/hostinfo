@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Feb  6 18:49:31 UTC 2018 - jason.record@suse.com
+
+- showNetAddr uses ip address instead of ifconfig
+
+-------------------------------------------------------------------
 Wed Jan 10 20:43:20 UTC 2018 - jason.record@suse.com
 
 - Fixed kernel install time

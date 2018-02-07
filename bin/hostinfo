@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 06
+# Modified:    2018 Feb 07
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.5.2'
+SVER='1.5.3'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -261,9 +261,10 @@ showNetAddr() {
 
 showUpdates()
 {
-	LIP_ALL=$(rpm -qa --last | head -1)
-	LIP_NAME=$(echo $LIP_ALL | cut -d' ' -f1)
-	LIP_DATE=$(echo $LIP_ALL | sed -e "s/${LIP_NAME}[[:space:]]*//g")
+	UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
+	rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
+	LIP_EPOC=$(head -1 $UPDATES_TMP | cut -d\| -f1)
+	LIP_DATE=$(date -d @${LIP_EPOC})
 	if (( QUIET ))
 	then
 		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" >> $FILE_ROOT_MOTD
@@ -296,13 +297,14 @@ showUpdates()
 		printf "$FORMAT_OUT" " -Security:" "$PATCH_COUNT_SECURITY" | tee -a $FILE_ROOT_MOTD
 	fi
 
-	COUNT_NVR=$(rpm -qa --queryformat "%{VENDOR}|%{NAME}\n" | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
+	COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
 	if (( QUIET ))
 	then
 		printf "$FORMAT_OUT" " -3rd Party Packages:" "$COUNT_NVR" >> $FILE_ROOT_MOTD
 	else
 		printf "$FORMAT_OUT" " -3rd Party Packages:" "$COUNT_NVR" | tee -a $FILE_ROOT_MOTD
 	fi
+	rm -f $UPDATES_TMP
 }
 
 showMemory()

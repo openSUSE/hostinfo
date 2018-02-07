@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Feb  7 15:03:28 UTC 2018 - jason.record@suse.com
+
+- Consolidated rpm reads
+
+-------------------------------------------------------------------
 Tue Feb  6 19:07:38 UTC 2018 - jason.record@suse.com
 
 - Corrected memory with updated free output (bsc#1079662)

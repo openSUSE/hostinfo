@@ -264,7 +264,7 @@ showUpdates()
 	UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
 	rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
 	LIP_EPOC=$(head -1 $UPDATES_TMP | cut -d\| -f1)
-	LIP_DATE=$(date -d @${LIP_EPOC})
+	LIP_DATE=$(date '+%c' -d @${LIP_EPOC})
 	if (( QUIET ))
 	then
 		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" >> $FILE_ROOT_MOTD

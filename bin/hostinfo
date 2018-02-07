@@ -273,7 +273,6 @@ showUpdates()
 	REPOS=$(zypper --non-interactive --no-gpg-checks repos 2>/dev/null | grep '^[ ]\{0,1\}[[:digit:]]' | wc -l)
 	if (( REPOS > 1 ))
 	then
-		PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
 		if [[ -n "$PATCH_STRING" ]]
 		then
 			PATCH_COUNT_NEEDED=$(echo $PATCH_STRING | cut -d' ' -f1)
@@ -409,6 +408,7 @@ done
 
 UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
 rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
+PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
 (( DATE_NEEDED )) && displayCurrentDate
 > $FILE_ROOT_MOTD
 hrLine

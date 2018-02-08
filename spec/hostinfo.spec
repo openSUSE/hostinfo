@@ -22,6 +22,7 @@ Group:        System/Monitoring
 Source:       %{name}-%{version}.tar.gz
 Requires:     cron
 Requires:     sed
+Requires:     issue-generator
 Buildarch:    noarch
 
 %description
@@ -36,43 +37,34 @@ gzip -9f man/*8
 
 %install
 pwd;ls -la
-mkdir -p %{buildroot}%{_sysconfdir}/cron.daily
+mkdir -p %{buildroot}%{_sysconfdir}/cron.hourly
 mkdir -p %{buildroot}%{_sbindir}
 install -d %{buildroot}%{_mandir}/man8
 install -d %{buildroot}%{_docdir}/%{name}
 install -d %{buildroot}/var/spool/%{name}
-install -m 644 conf/hostinforc %{buildroot}%{_sysconfdir}
+install -m 644 conf/hostinfo.conf %{buildroot}%{_sysconfdir}
 install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
-install -m 755 bin/hostinfo-refresh %{buildroot}%{_sysconfdir}/cron.daily
+install -m 755 bin/hostinfo-refresh %{buildroot}%{_sysconfdir}/cron.hourly
 install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
 %files
 %defattr(-,root,root)
 %{_sbindir}/hostinfo
-%config %{_sysconfdir}/hostinforc
-%{_sysconfdir}/cron.daily/hostinfo-refresh
+%config %{_sysconfdir}/hostinfo.conf
+%{_sysconfdir}/cron.hourly/hostinfo-refresh
 %{_mandir}/man8/*
 %dir %attr(0700,root,root) /var/spool/%{name}
 %dir %{_docdir}/%{name}
 %doc %{_docdir}/%{name}/*
 
 %post
-echo '[[ -s /var/spool/hostinfo/root-motd ]] && cat /var/spool/hostinfo/root-motd' >> /root/.profile
-echo "Run hostinfo" > /var/spool/hostinfo/root-motd
+hostinfo -q
+issue-generator
 
 %preun
-rm -f /var/spool/hostinfo/root-motd
-
-%postun
-if [[ -e /root/.profile ]]
-then
-	sed -i -e '/\/var\/spool\/hostinfo\/root-motd/d' /root/.profile
-	if [[ ! -s /root/.profile ]]
-	then
-		rm -f /root/.profile
-	fi
-fi
+rm -f /etc/issue.d/99-hostinfo.conf
+issue-generator
 
 %changelog
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 08
+# Modified:    2018 Feb 10
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,23 +26,27 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.6.1'
+SVER='1.7.0'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
+CONFIG_FILE='/etc/hostinfo.conf'
+ISSUE_BASE='/run/issue.d'
+FILE_HOSTINFO=''
+FILE_BASE="80-hostinfo-"
 
-if [[ -s /etc/hostinfo.conf ]]
+if [[ -s $CONFIG_FILE ]]
 then
-	. /etc/hostinfo.conf
+	. $CONFIG_FILE
 else
-	echo "Error: Missing /etc/hostinforc"
+	echo "Error: Missing $CONFIG_FILE"
 	exit 2
 fi
 
 ##############################################################################
 # Functions
 ##############################################################################
-showHelp()
+getHelp()
 {
 	echo "hostinfo - Gathers host information"
 	echo
@@ -58,56 +62,21 @@ showHelp()
 	echo
 }
 
-exit_code() {
-	XC=$1
-	shift
-	MSG="$@"
-	[[ -n "$MSG" ]] && echo "$MSG"
-	exit $XC
+getHostname()
+{
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}03-host" 
+	printf "$FORMAT_OUT" "Hostname:" "\n" > $FILE_HOSTINFO
 }
 
-showHostname()
+getDate()
 {
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" "Hostname:" "$(hostname)" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" "Hostname:" "$(hostname)" | tee -a $FILE_HOSTINFO
-	fi
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}02-date" 
+	printf "$FORMAT_OUT" "Current As Of:" "$(date '+%c')" > $FILE_HOSTINFO
 }
 
-hrLine()
+getDistribution()
 {
-	if (( QUIET ))
-	then
-		echo '-----------------------------------------------------------' >> $FILE_HOSTINFO
-	else
-		echo '-----------------------------------------------------------' | tee -a $FILE_HOSTINFO
-	fi
-}
-
-emptyLine()
-{
-	if (( QUIET ))
-	then
-		echo >> $FILE_HOSTINFO
-	else
-		echo | tee -a $FILE_HOSTINFO
-	fi
-}
-
-showDate()
-{
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" "Current As Of:" "$(date '+%c')" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" "Current As Of:" "$(date '+%c')" | tee -a $FILE_HOSTINFO
-	fi
-}
-
-showDistribution()
-{
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}01-distro" 
 	RELEASE_FILE='/etc/os-release'
 	PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
 	DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
@@ -116,18 +85,12 @@ showDistribution()
 		SPTMP=$(echo $PRETTY_NAME | awk '{print $NF}')
 		SPSTR=${SPTMP##SP}
 	fi
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" "Distribution:" "$DIST" >> $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Service Pack:" "$SPSTR" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" "Distribution:" "$DIST" | tee -a $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Service Pack:" "$SPSTR" | tee -a $FILE_HOSTINFO
-	fi
+	printf "$FORMAT_OUT" "Distribution:" "$DIST SP${SPSTR}" > $FILE_HOSTINFO
 }
 
-showKernel()
+getKernel()
 {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}04-kernel" 
 	KERNEL_STR=$(uname -r)
 	KERNEL_TYPE=$(awk -F- '{print $NF}' <<< $KERNEL_STR)
 	KERN_RPM="kernel-${KERNEL_TYPE}"
@@ -151,21 +114,20 @@ showKernel()
 		KERN_TAINT_STR="Not Tainted"
 	fi
 
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" >> $FILE_HOSTINFO
-		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" >> $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" >> $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" "Architecture:" "$(uname -i)" | tee -a $FILE_HOSTINFO
-		printf "$FORMAT_OUT" "Kernel Version:" "$KERNEL_STR" | tee -a $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Installed:" "$KERN_DATE_STR" | tee -a $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Status:" "$KERN_TAINT_STR" | tee -a $FILE_HOSTINFO
-	fi
+	printf "$FORMAT_OUT" "Kernel Version:" "\r" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Architecture:" "\m" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Installed:" "$KERN_DATE_STR" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Status:" "$KERN_TAINT_STR" >> $FILE_HOSTINFO
 }
 
-showNetAddr() {
+getNetAddr() {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}06-network" 
+	if (( IGNORE_NET )); then
+		rm -f $FILE_HOSTINFO
+	else
+		rm -f /run/issue.d/70-e*conf
+	fi
+
 	NET_LIST="$(ip address)
 "
 	MASTER=''
@@ -177,66 +139,65 @@ showNetAddr() {
 	RE_START='^[0-9]'
 	RE_IPV4='inet '
 	RE_IPV6='inet6 '
+	echo "Network Interfaces" > $FILE_HOSTINFO
 	echo "$NET_LIST" | while read LINE
 	do
 #		echo "Pre:    MASTER=$MASTER IFACE=$IFACE #ADDR4=${#ADDR4} #ADDR6=${#ADDR6} #LINE=${#LINE} : $LINE"
 		if (( ${#LINE} < 1 )); then
 #			echo "Line0:  MASTER=$MASTER IFACE=$IFACE #ADDR4=${#ADDR4} #ADDR6=${#ADDR6} #LINE=${#LINE} : $LINE"
+			STR_ADDR=''
 			if (( ${#ADDR4} > 0 )); then
-				STR_LABEL='IPv4 Address:'
-				STR_ADDR="$IFACE $ADDR4"
-			elif (( ${#MASTER} > 0 )); then
-				STR_LABEL='Bonded Interface:'
-				STR_ADDR="$IFACE (Slave to $MASTER)"
-			else
-				STR_LABEL='Interface:'
-				STR_ADDR="$IFACE (Unconfigured)"
-			fi
-			if (( QUIET )); then
-				printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
-			else
-				printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" | tee -a $FILE_HOSTINFO
+				STR_LABEL=" ${IFACE}:"
+				STR_ADDR="$ADDR4"
 			fi
 			if (( ${#ADDR6} > 0 )); then
-				STR_LABEL='IPv6 Address:'
-				STR_ADDR="$IFACE $ADDR6"
-				if (( QUIET )); then
-					printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
+				if (( ${#STR_ADDR} > 0 )); then
+					STR_ADDR="$STR_ADDR $ADDR6"
 				else
-					printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" | tee -a $FILE_HOSTINFO
+					STR_LABEL=" ${IFACE}:"
+					STR_ADDR="$ADDR6"
 				fi
 			fi
+			if (( ${#STR_ADDR} < 1 )); then
+				if (( ${#MASTER} > 0 )); then
+					STR_LABEL=" ${IFACE}:"
+					STR_ADDR="(Slave to $MASTER)"
+				else
+					STR_LABEL=" ${IFACE}:"
+					STR_ADDR="(Unconfigured)"
+				fi
+			fi
+			printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
 		elif [[ "$LINE" =~ $RE_START ]]; then
 			if (( ${#IFACE} > 0 )); then
+				STR_ADDR=''
 				if (( ${#ADDR4} > 0 )); then
-					STR_LABEL='IPv4 Address:'
-					STR_ADDR="$IFACE $ADDR4"
-				elif (( ${#MASTER} > 0 )); then
-					STR_LABEL='Bonded Interface:'
-					STR_ADDR="$IFACE (Slave to $MASTER)"
-				else
-					STR_LABEL='Interface:'
-					STR_ADDR="$IFACE (Unconfigured)"
-				fi
-				if (( QUIET )); then
-					printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
-				else
-					printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" | tee -a $FILE_HOSTINFO
+					STR_LABEL=" ${IFACE}:"
+					STR_ADDR="$ADDR4"
 				fi
 				if (( ${#ADDR6} > 0 )); then
-					STR_LABEL='IPv6 Address:'
-					STR_ADDR="$IFACE $ADDR6"
-					if (( QUIET )); then
-						printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
+					if (( ${#STR_ADDR} > 0 )); then
+						STR_ADDR="$STR_ADDR $ADDR6"
 					else
-						printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" | tee -a $FILE_HOSTINFO
+						STR_LABEL=" ${IFACE}:"
+						STR_ADDR="$ADDR6"
 					fi
 				fi
-				MASTER=''
-				ADDR4=''
-				ADDR6=''
-				IFACE=''
+				if (( ${#STR_ADDR} < 1 )); then
+					if (( ${#MASTER} > 0 )); then
+						STR_LABEL=" ${IFACE}:"
+						STR_ADDR="(Slave to $MASTER)"
+					else
+						STR_LABEL=" ${IFACE}:"
+						STR_ADDR="(Unconfigured)"
+					fi
+				fi
+				printf "$FORMAT_OUT" "$STR_LABEL" "$STR_ADDR" >> $FILE_HOSTINFO
 			fi
+			MASTER=''
+			ADDR4=''
+			ADDR6=''
+			IFACE=''
 			LINE_ARRAY=($LINE)
 			IFACE=${LINE_ARRAY[1]//:/}
 			if [[ "$IFACE" == "lo" ]]; then
@@ -259,16 +220,18 @@ showNetAddr() {
 	done
 }
 
-showUpdates()
+getUpdates()
 {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}05-updates" 
+	if (( IGNORE_UPDATES )); then
+		rm -f $FILE_HOSTINFO
+		return 0
+	fi
+	UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
+	rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
+	PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
 	LIP_EPOC=$(head -1 $UPDATES_TMP | cut -d\| -f1)
 	LIP_DATE=$(date '+%c' -d @${LIP_EPOC})
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" | tee -a $FILE_HOSTINFO
-	fi
 
 	REPOS=$(zypper --non-interactive --no-gpg-checks repos 2>/dev/null | grep '^[ ]\{0,1\}[[:digit:]]' | wc -l)
 	if (( REPOS > 1 ))
@@ -285,27 +248,22 @@ showUpdates()
 		PATCH_COUNT_NEEDED='Not Registered'
 		PATCH_COUNT_SECURITY='Not Registered'
 	fi
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" " -Patches Needed:" "$PATCH_COUNT_NEEDED" >> $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Security:" "$PATCH_COUNT_SECURITY" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" " -Patches Needed:" "$PATCH_COUNT_NEEDED" | tee -a $FILE_HOSTINFO
-		printf "$FORMAT_OUT" " -Security:" "$PATCH_COUNT_SECURITY" | tee -a $FILE_HOSTINFO
-	fi
-
 	COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
-	if (( QUIET ))
-	then
-		printf "$FORMAT_OUT" " -3rd Party Packages:" "$COUNT_NVR" >> $FILE_HOSTINFO
-	else
-		printf "$FORMAT_OUT" " -3rd Party Packages:" "$COUNT_NVR" | tee -a $FILE_HOSTINFO
-	fi
-	rm -f $UPDATES_TMP
+
+	printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" > $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Patches Needed:" "$PATCH_COUNT_NEEDED" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Security:" "$PATCH_COUNT_SECURITY" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " 3rd Party Packages:" "$COUNT_NVR" >> $FILE_HOSTINFO
 }
 
-showMemory()
+getMemory()
 {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}07-memory" 
+	if (( IGNORE_MEM )); then
+		rm -f $FILE_HOSTINFO
+		return 0
+	fi
+	echo "Memory" > $FILE_HOSTINFO
 	if [[ -x /usr/bin/free ]]
 	then
 		FREE=$(free -h | grep "^Mem")
@@ -318,108 +276,62 @@ showMemory()
 		CALC_TOTAL=${FREE_ARRAY[1]}
 		CALC_AVAIL=${FREE_ARRAY[-1]}
 		MEM_PERCENT=$(printf "%i" $(( CALC_AVAIL * 100 / CALC_TOTAL )))
-		if (( QUIET ))
-		then
-			printf "$FORMAT_OUT" "Total/Free/Avail Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" >> $FILE_HOSTINFO
-		else
-			printf "$FORMAT_OUT" "Total/Free/Avail Memory:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" | tee -a $FILE_HOSTINFO
-		fi
+
+		printf "$FORMAT_OUT" " Total/Free/Avail:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" >> $FILE_HOSTINFO
 	else
 		MEM_TOTAL=$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')
 		MEM_FREE=$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}')
-		if (( QUIET ))
-		then
-			printf "$FORMAT_OUT" "Total/Free Memory:" "${MEM_TOTAL}/${MEM_FREE} MB" >> $FILE_HOSTINFO
-		else
-			printf "$FORMAT_OUT" "Total/Free Memory:" "${MEM_TOTAL}/${MEM_FREE} MB" | tee -a $FILE_HOSTINFO
-		fi
+
+		printf "$FORMAT_OUT" " Total/Free:" "${MEM_TOTAL}/${MEM_FREE} MB" >> $FILE_HOSTINFO
 	fi
 }
 
-showDisks()
+getDisks()
 {
-	DISK_SIZES=$(egrep '[s,h,xv,c][0-9]?d[a-z,0-9]$' /proc/partitions | awk '{printf "%s %u %s\n", "/dev/"$4, $3*1024/1000^3, "GB"}')
-	if [[ -z "$DISK_SIZES" ]]; then
-		DISK_SIZES=Unknown
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}08-disks" 
+	if (( IGNORE_DISK )); then
+		rm -f $FILE_HOSTINFO
+		return 0
 	fi
-	echo "$DISK_SIZES" | while read DISK_INFO
+	echo "Storage Devices" > $FILE_HOSTINFO
+	DISK_LIST=$(fdisk -l | grep 'Disk /' | awk '{print $2,$3,$4}' | sed -e 's/://g;s/,//g')
+	echo "$DISK_LIST" | while read DISK_INFO
 	do
-		THIS_DISK=$(echo $DISK_INFO | awk '{printf "%s %u %s\n", $1, $2, $3}')
-		if (( QUIET ))
-		then
-			printf "$FORMAT_OUT" "Hard Disk:" "$THIS_DISK" >> $FILE_HOSTINFO
-		else
-			printf "$FORMAT_OUT" "Hard Disk:" "$THIS_DISK" | tee -a $FILE_HOSTINFO
-		fi
+		THIS_DISK=($DISK_INFO)
+		printf "$FORMAT_OUT" " ${THIS_DISK[0]}:" "${THIS_DISK[1]} ${THIS_DISK[2]}" >> $FILE_HOSTINFO
 	done
-}
-
-displayCurrentDate()
-{
-	if ! (( QUIET ))
-	then
-		echo
-		printf "$FORMAT_OUT" "Current Date:" "$(date '+%c')"
-	fi
-}
-
-showRootMotd()
-{
-	if [[ -s $FILE_HOSTINFO ]]
-	then
-		if grep "Hostname:" $FILE_HOSTINFO &> /dev/null
-		then
-			displayCurrentDate
-			DATE_NEEDED=0
-			cat $FILE_HOSTINFO
-			exit 0
-		fi
-	fi
 }
 
 ##############################################################################
 # main
 ##############################################################################
-DATE_NEEDED=1
-while getopts :hnmdquv TMPOPT
-do
-	case $TMPOPT in
-	\:)	showHelp
-			case $OPTARG in
-			*) echo "ERROR: Missing Argument -$OPTARG"
-				;;
-			esac
-			echo; exit 1 ;;
-	\?)	showHelp
-			case $OPTARG in
-			*) echo "ERROR: Invalid Option -$OPTARG"
-				;;
-			esac
-			echo; exit 1 ;;
-	n) IGNORE_NET=1 ;;
-	m) IGNORE_MEM=1 ;;
-	d) IGNORE_DISK=1 ;;
-	u) IGNORE_UPDATES=1 ;;
-	h) showHelp; exit 0 ;;
-	q) QUIET=1 ;;
-	v) showRootMotd ;;
-	esac
-done
+if ! [[ -d ${ISSUE_BASE} ]]; then
+	mkdir -p ${ISSUE_BASE}
+fi
+echo > ${ISSUE_BASE}/00-OS
+echo > ${ISSUE_BASE}/90-OS
 
-UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
-rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
-PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
-(( DATE_NEEDED )) && displayCurrentDate
-> $FILE_HOSTINFO
-hrLine
-showHostname
-showDate
-showDistribution
-showKernel
-(( IGNORE_UPDATES )) || showUpdates
-(( IGNORE_NET )) || showNetAddr
-(( IGNORE_MEM )) || showMemory
-(( IGNORE_DISK )) || showDisks
-hrLine
-emptyLine
+case $1 in
+	dist*) getDate; getDistribution ;;
+	date) getDate ;;
+	host*) getDate; getHostname ;;
+	kern*) getDate; getKernel ;;
+	up*) getDate; getUpdates ;;
+	net*) getDate; getNetAddr ;;
+	mem*) getDate; getMemory ;;
+	disk*) getDate; getDisks ;;
+	*)
+		getDistribution
+		getDate
+		getHostname
+		getKernel
+		getUpdates
+		getNetAddr
+		getMemory
+		getDisks
+		;;
+esac
+
+rm -f $UPDATES_TMP
+/usr/sbin/issue-generator
 

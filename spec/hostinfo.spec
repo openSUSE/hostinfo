@@ -44,13 +44,12 @@ mkdir -p %{buildroot}%{_unitdir}
 mkdir -p %{buildroot}%{_presetdir}
 install -d %{buildroot}%{_mandir}/man8
 install -d %{buildroot}%{_docdir}/%{name}
-install -d %{buildroot}/var/spool/%{name}
 install -m 644 conf/hostinfo.conf %{buildroot}%{_sysconfdir}
-install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
-install -m 644 bin/10-hostinfo.preset %{buildroot}%{_presetdir}
-install -m 644 bin/hostinfo.service %{buildroot}%{_unitdir}
+install -m 644 conf/10-hostinfo.preset %{buildroot}%{_presetdir}
+install -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
 install -m 755 bin/hostinfo-refresh %{buildroot}%{_sysconfdir}/cron.hourly
+install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
 install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
 %files
@@ -61,13 +60,21 @@ install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 %config %{_sysconfdir}/hostinfo.conf
 %{_sysconfdir}/cron.hourly/hostinfo-refresh
 %{_mandir}/man8/*
-%dir %attr(0700,root,root) /var/spool/%{name}
 %dir %{_docdir}/%{name}
 %doc %{_docdir}/%{name}/*
 
+%post
+if [ -x /usr/bin/systemctl ]; then
+	/usr/bin/systemctl preset hostinfo.service &>/dev/null || :
+fi
+
 %preun
-rm -f /etc/issue.d/99-hostinfo.conf
-issue-generator
+rm -f /run/issue.d/80-hostinfo-*
+rm -f /run/issue.d/00-OS
+rm -f /run/issue.d/90-OS
+if [ -x /usr/sbin/issue-generator ]; then
+	/usr/sbin/issue-generator || :
+fi
 
 %changelog
 

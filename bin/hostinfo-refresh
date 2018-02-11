@@ -2,6 +2,5 @@
 
 HOSTINFO_BIN="/usr/sbin/hostinfo"
 $HOSTINFO_BIN -q
-issue-generator
 
 

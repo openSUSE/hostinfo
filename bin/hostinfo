@@ -302,6 +302,16 @@ getDisks()
 	done
 }
 
+getCPULoad() {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-cpuload" 
+	if (( IGNORE_CPULOAD )); then
+		rm -f $FILE_HOSTINFO
+		return 0
+	fi
+	CPU_COUNT=$(grep '^processor' /proc/cpuinfo 2>/dev/null | wc -l)
+	
+}
+
 ##############################################################################
 # main
 ##############################################################################

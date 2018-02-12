@@ -1,32 +1,47 @@
-.TH HOSTINFO "8" "08 Feb 2018" "hostinfo" "Support Utilities Manual"
+.TH HOSTINFO "8" "12 Feb 2018" "hostinfo" "Support Utilities Manual"
 .SH NAME
 hostinfo - Gathers basic host information for issue generator
 .SH SYNOPSIS
-hostinfo [OPTIONS]
+hostinfo [COMMAND]
 .SH DESCRIPTION
-Basic information about the host is gathered and displayed in a tag or label type format. 
-.SH OPTIONS
+Basic information about the host is gathered and displayed in a tag or label type format in the issue file. Relies on the issue-generator to create /etc/issue.
+.SH COMMAND
 .TP
-\fB-h\fR
-Show this help screen.
+\fBhelp\fR
+The help screen
 .TP
-\fB-n\fR
-Ignore network address output
+\fBall\fR
+Run all commands (default)
 .TP
-\fB-m\fR
-Ignore memory output
+\fBdist\fR
+Gathers distribution information
 .TP
-\fB-d\fR
-Ignore disk checks and output
+\fBhost\fR
+Gathers the server hostname
 .TP
-\fB-u\fR
-Ignore update output
+\fBkernel\fR
+Gathers current kernel information
 .TP
-\fB-q\fR
-Create the hostinfo file quietly
+\fBupdates\fR
+Gather current updates from zypper
 .TP
-\fB-v\fR
-Views the hostinfo file created by hostinfo, instead of updating the file
+\fBnetwork\fR
+Update network information
+.TP
+\fBmemory\fR
+Update memory information
+.TP
+\fBcpu\fR
+Show current CPU load information
+.TP
+\fBdisk\fR
+Show list is storage devices and their size
+.RE
+.SH FILES
+.I /etc/hostinfo.conf
+.RS
+The hostinfo configuration file.
+.RE
 .SH AUTHOR
 Jason Record <jason.record@suse.com>
 .SH COPYRIGHT
@@ -41,3 +56,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
+.SH SEE ALSO
+.BR issue-generator (8)
+

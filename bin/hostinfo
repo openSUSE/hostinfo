@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.1'
+SVER='1.7.5'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -50,15 +50,18 @@ getHelp()
 {
 	echo "hostinfo - Gathers host information"
 	echo
-	echo "USAGE: hostinfo [OPTIONS]"
+	echo "USAGE: hostinfo [command]"
 	echo "OPTIONS"
-	echo " -h This help screen"
-	echo " -n Ignore network address output"
-	echo " -m Ignore memory output"
-	echo " -d Ignore disk output"
-	echo " -u Ignore updates output"
-	echo " -q Quiet mode"
-	echo " -v View the current root-motd"
+	echo " help     This help screen"
+	echo " all      All commands run (default)"
+	echo " dist     Gathers distribution information"
+	echo " host     Gathers the server hostname"
+	echo " kernel   Gathers current kernel information"
+	echo " updates  Gather current updates from zypper"
+	echo " net      Update network information"
+	echo " mem      Update memory information"
+	echo " cpu      Show current CPU load information"
+	echo " disk     Show list is storage devices and their size"
 	echo
 }
 
@@ -78,15 +81,33 @@ getDistribution()
 {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}01-distro" 
 	> $FILE_HOSTINFO
-	RELEASE_FILE='/etc/os-release'
-	PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
-	DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
-	SPSTR="0"
-	if echo $PRETTY_NAME | grep SP &>/dev/null; then
-		SPTMP=$(echo $PRETTY_NAME | awk '{print $NF}')
-		SPSTR=${SPTMP##SP}
+	PRODUCT_FILE="/etc/products.d/baseproduct"
+	if [[ -s $PRODUCT_FILE ]]; then
+		SUMMARY=$(grep '<summary>' /etc/products.d/baseproduct 2>/dev/null)
+		PATCHLVL=$(grep '<patchlevel>' /etc/products.d/baseproduct 2>/dev/null)
+
+		SUMMARY=${SUMMARY#"${SUMMARY%%[![:space:]]*}"} # trim leading white space
+		PATCHLVL=${PATCHLVL#"${PATCHLVL%%[![:space:]]*}"} 
+		SUMMARY=${SUMMARY//\<summary\>/} # search and remove xml tags
+		DIST=${SUMMARY//\<\/summary\>/}
+		PATCHLVL=${PATCHLVL//\<patchlevel\>/}
+		PATCHLVL=${PATCHLVL//\<\/patchlevel\>/}
+		if (( PATCHLVL > 0 )); then
+			printf "$FORMAT_OUT" "Distribution:" "$DIST" >> $FILE_HOSTINFO
+		else
+			printf "$FORMAT_OUT" "Distribution:" "$DIST SP${PATCHLVL}" >> $FILE_HOSTINFO
+		fi
+	else
+		RELEASE_FILE='/etc/os-release'
+		PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
+		DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
+		SPSTR="0"
+		if echo $PRETTY_NAME | grep SP &>/dev/null; then
+			SPTMP=$(echo $PRETTY_NAME | awk '{print $NF}')
+			SPSTR=${SPTMP##SP}
+		fi
+		printf "$FORMAT_OUT" "Distribution:" "$DIST SP${SPSTR}" >> $FILE_HOSTINFO
 	fi
-	printf "$FORMAT_OUT" "Distribution:" "$DIST SP${SPSTR}" >> $FILE_HOSTINFO
 }
 
 getKernel()
@@ -126,6 +147,8 @@ getNetAddr() {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}06-network" 
 	if (( IGNORE_NET )); then
 		rm -f $FILE_HOSTINFO
+		echo "Network ignored in $CONFIG_FILE"
+		return 0
 	else
 		rm -f /run/issue.d/70-e*conf
 		> $FILE_HOSTINFO
@@ -228,6 +251,7 @@ getUpdates()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}05-updates" 
 	if (( IGNORE_UPDATES )); then
 		rm -f $FILE_HOSTINFO
+		echo "System updates ignored in $CONFIG_FILE"
 		return 0
 	fi
 	> $FILE_HOSTINFO
@@ -254,7 +278,7 @@ getUpdates()
 	fi
 	COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
 
-	printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" "Last Installed Package:" "$LIP_DATE" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Patches Needed:" "$PATCH_COUNT_NEEDED" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Security:" "$PATCH_COUNT_SECURITY" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " 3rd Party Packages:" "$COUNT_NVR" >> $FILE_HOSTINFO
@@ -265,6 +289,7 @@ getMemory()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}07-memory" 
 	if (( IGNORE_MEM )); then
 		rm -f $FILE_HOSTINFO
+		echo "Memory ignored in $CONFIG_FILE"
 		return 0
 	fi
 	echo "Memory" > $FILE_HOSTINFO
@@ -295,6 +320,7 @@ getDisks()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-disks" 
 	if (( IGNORE_DISK )); then
 		rm -f $FILE_HOSTINFO
+		echo "Disk information ignored in $CONFIG_FILE"
 		return 0
 	fi
 	echo "Storage Devices" > $FILE_HOSTINFO
@@ -310,6 +336,7 @@ getCPULoad() {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}08-cpuload" 
 	if (( IGNORE_CPULOAD )); then
 		rm -f $FILE_HOSTINFO
+		echo "CPU load ignored in $CONFIG_FILE"
 		return 0
 	fi
 	CPU_COUNT=$(grep '^processor' /proc/cpuinfo 2>/dev/null | wc -l)
@@ -328,8 +355,9 @@ if ! [[ -d ${ISSUE_BASE} ]]; then
 fi
 echo > ${ISSUE_BASE}/00-OS
 echo > ${ISSUE_BASE}/90-OS
-
+echo > ${ISSUE_BASE}/${FILE_BASE}00-space
 case $1 in
+	-h|--h*|help) getHelp; exit ;;
 	dist*) getDate; getDistribution ;;
 	date) getDate ;;
 	host*) getDate; getHostname ;;

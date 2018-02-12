@@ -1,6 +1,8 @@
 -------------------------------------------------------------------
-Mon Feb 12 19:21:17 UTC 2018 - jason.record@suse.com
+Mon Feb 12 20:39:28 UTC 2018 - jason.record@suse.com
 
+- Updated hostinfo(8) man page
+- Distribution information first comes from baseproduct
 - Added CPU Load
 
 -------------------------------------------------------------------

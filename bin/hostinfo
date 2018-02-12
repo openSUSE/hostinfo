@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 10
+# Modified:    2018 Feb 12
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.0'
+SVER='1.7.1'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -77,6 +77,7 @@ getDate()
 getDistribution()
 {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}01-distro" 
+	> $FILE_HOSTINFO
 	RELEASE_FILE='/etc/os-release'
 	PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
 	DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
@@ -85,12 +86,13 @@ getDistribution()
 		SPTMP=$(echo $PRETTY_NAME | awk '{print $NF}')
 		SPSTR=${SPTMP##SP}
 	fi
-	printf "$FORMAT_OUT" "Distribution:" "$DIST SP${SPSTR}" > $FILE_HOSTINFO
+	printf "$FORMAT_OUT" "Distribution:" "$DIST SP${SPSTR}" >> $FILE_HOSTINFO
 }
 
 getKernel()
 {
-	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}04-kernel" 
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}04-kernel"
+	> $FILE_HOSTINFO
 	KERNEL_STR=$(uname -r)
 	KERNEL_TYPE=$(awk -F- '{print $NF}' <<< $KERNEL_STR)
 	KERN_RPM="kernel-${KERNEL_TYPE}"
@@ -126,6 +128,7 @@ getNetAddr() {
 		rm -f $FILE_HOSTINFO
 	else
 		rm -f /run/issue.d/70-e*conf
+		> $FILE_HOSTINFO
 	fi
 
 	NET_LIST="$(ip address)
@@ -227,6 +230,7 @@ getUpdates()
 		rm -f $FILE_HOSTINFO
 		return 0
 	fi
+	> $FILE_HOSTINFO
 	UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
 	rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
 	PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
@@ -250,7 +254,7 @@ getUpdates()
 	fi
 	COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
 
-	printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" > $FILE_HOSTINFO
+	printf "$FORMAT_OUT" "Last Updated Package:" "$LIP_DATE" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Patches Needed:" "$PATCH_COUNT_NEEDED" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Security:" "$PATCH_COUNT_SECURITY" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " 3rd Party Packages:" "$COUNT_NVR" >> $FILE_HOSTINFO
@@ -288,7 +292,7 @@ getMemory()
 
 getDisks()
 {
-	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}08-disks" 
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-disks" 
 	if (( IGNORE_DISK )); then
 		rm -f $FILE_HOSTINFO
 		return 0
@@ -303,13 +307,17 @@ getDisks()
 }
 
 getCPULoad() {
-	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-cpuload" 
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}08-cpuload" 
 	if (( IGNORE_CPULOAD )); then
 		rm -f $FILE_HOSTINFO
 		return 0
 	fi
 	CPU_COUNT=$(grep '^processor' /proc/cpuinfo 2>/dev/null | wc -l)
-	
+	UP_TIME=($(uptime))
+	SUM=$(expr ${UP_TIME[-3]//[.,]/} + ${UP_TIME[-2]//[.,]/} + ${UP_TIME[-1]//[.,]/})
+	AVG=$(( SUM / 3 ))
+	PERCENT=$(( AVG / CPU_COUNT ))
+	printf "$FORMAT_OUT" "CPU Load Average:" "$AVG (${PERCENT}%) with $CPU_COUNT CPUs" > $FILE_HOSTINFO
 }
 
 ##############################################################################
@@ -330,6 +338,7 @@ case $1 in
 	net*) getDate; getNetAddr ;;
 	mem*) getDate; getMemory ;;
 	disk*) getDate; getDisks ;;
+	cpu*) getDate; getCPULoad ;;
 	*)
 		getDistribution
 		getDate
@@ -338,6 +347,7 @@ case $1 in
 		getUpdates
 		getNetAddr
 		getMemory
+		getCPULoad
 		getDisks
 		;;
 esac

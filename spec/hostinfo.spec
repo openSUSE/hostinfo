@@ -28,7 +28,7 @@ Buildarch:    noarch
 
 %description
 A script that displays current system information to help 
-identify a host and it's resources.
+identify a host and its resources.
  
 %prep
 %setup -q

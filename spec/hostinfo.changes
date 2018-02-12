@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Feb 12 19:21:17 UTC 2018 - jason.record@suse.com
+
+- Added CPU Load
+
+-------------------------------------------------------------------
 Thu Feb  8 19:57:45 UTC 2018 - jason.record@suse.com
 
 - Integrated hostinfo with issue-generator (bsc#1080153)

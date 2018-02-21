@@ -63,6 +63,8 @@ getHelp()
 	echo " cpu      Show current CPU load information"
 	echo " disk     Show list is storage devices and their size"
 	echo
+	echo " hostinfo v${SVER}"
+	echo
 }
 
 getHostname()
@@ -368,13 +370,15 @@ getSSHKeys() {
 ##############################################################################
 # main
 ##############################################################################
+OPT="$1"
+[[ -z $OPT ]] && OPT="all"
 [[ -d ${ISSUE_BASE} ]] || mkdir -p ${ISSUE_BASE}
 SPACER="${FILE_BASE}00-space"
 echo > ${ISSUE_BASE}/${SPACER}
 cd ${ISSUE_BASE}
 [[ -h 00-OS ]] || ln -sf ${SPACER} 00-OS
 [[ -h 90-OS ]] || ln -sf ${SPACER} 90-OS
-case $1 in
+case $OPT in
 	-h|--h*|help) getHelp; exit ;;
 	dist*) getDate; getDistribution ;;
 	date) getDate ;;
@@ -386,7 +390,7 @@ case $1 in
 	disk*) getDate; getDisks ;;
 	cpu*) getDate; getCPULoad ;;
 	ssh*) getDate; getSSHKeys ;;
-	*)
+	all)
 		getDistribution
 		getDate
 		getHostname
@@ -398,6 +402,7 @@ case $1 in
 		getSSHKeys
 		getDisks
 		;;
+	*) getHelp; exit ;;
 esac
 
 rm -f $UPDATES_TMP

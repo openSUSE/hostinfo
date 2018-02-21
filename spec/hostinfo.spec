@@ -69,6 +69,9 @@ install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
 %post
 %service_add_post hostinfo.service hostinfo.timer
+if [ -x /usr/bin/systemctl ]; then
+	/usr/bin/systemctl start hostinfo.timer
+fi
 
 %preun
 %service_del_preun hostinfo.service hostinfo.timer

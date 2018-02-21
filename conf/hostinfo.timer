@@ -2,7 +2,7 @@
 Description=Run hostinfo hourly and on boot
 
 [Timer]
-OnBootSec=15min
+OnBootSec=5min
 OnUnitActiveSec=1hour 
 
 [Install]

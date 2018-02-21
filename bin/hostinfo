@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 12
+# Modified:    2018 Feb 21
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.5'
+SVER='1.7.8'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -150,7 +150,7 @@ getNetAddr() {
 		echo "Network ignored in $CONFIG_FILE"
 		return 0
 	else
-		rm -f /run/issue.d/70-e*conf
+		rm -f /run/issue.d/70-[be]*conf
 		> $FILE_HOSTINFO
 	fi
 
@@ -317,7 +317,7 @@ getMemory()
 
 getDisks()
 {
-	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-disks" 
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}10-disks" 
 	if (( IGNORE_DISK )); then
 		rm -f $FILE_HOSTINFO
 		echo "Disk information ignored in $CONFIG_FILE"
@@ -347,15 +347,33 @@ getCPULoad() {
 	printf "$FORMAT_OUT" "CPU Load Average:" "$AVG (${PERCENT}%) with $CPU_COUNT CPUs" > $FILE_HOSTINFO
 }
 
+getSSHKeys() {
+	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-sshkeys" 
+	if (( IGNORE_SSHKEYS )); then
+		rm -f $FILE_HOSTINFO
+		echo "SSH keys ignored in $CONFIG_FILE"
+		return 0
+	else
+		rm -f /run/issue.d/60-ssh_host_keys.conf
+		echo "SSH Host Keys" > $FILE_HOSTINFO
+	fi
+	for KEY_FILE in $(find /etc/ssh -name 'ssh_host_*_key' 2>/dev/null)
+	do
+		KEY=$(ssh-keygen -l -f ${KEY_FILE} | awk '{print $2}')
+		TYPE=$(ssh-keygen -l -f ${KEY_FILE} | awk '{print $4}')
+		printf "$FORMAT_OUT" " $TYPE:" "$KEY" >> $FILE_HOSTINFO
+	done
+}
+
 ##############################################################################
 # main
 ##############################################################################
-if ! [[ -d ${ISSUE_BASE} ]]; then
-	mkdir -p ${ISSUE_BASE}
-fi
-echo > ${ISSUE_BASE}/00-OS
-echo > ${ISSUE_BASE}/90-OS
-echo > ${ISSUE_BASE}/${FILE_BASE}00-space
+[[ -d ${ISSUE_BASE} ]] || mkdir -p ${ISSUE_BASE}
+SPACER="${FILE_BASE}00-space"
+echo > ${ISSUE_BASE}/${SPACER}
+cd ${ISSUE_BASE}
+[[ -h 00-OS ]] || ln -sf ${SPACER} 00-OS
+[[ -h 90-OS ]] || ln -sf ${SPACER} 90-OS
 case $1 in
 	-h|--h*|help) getHelp; exit ;;
 	dist*) getDate; getDistribution ;;
@@ -367,6 +385,7 @@ case $1 in
 	mem*) getDate; getMemory ;;
 	disk*) getDate; getDisks ;;
 	cpu*) getDate; getCPULoad ;;
+	ssh*) getDate; getSSHKeys ;;
 	*)
 		getDistribution
 		getDate
@@ -376,6 +395,7 @@ case $1 in
 		getNetAddr
 		getMemory
 		getCPULoad
+		getSSHKeys
 		getDisks
 		;;
 esac

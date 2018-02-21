@@ -20,7 +20,6 @@ License:      GPL-2.0
 URL:          https://github.com/g23guy/hostinfo
 Group:        System/Monitoring
 Source:       %{name}-%{version}.tar.gz
-Requires:     cron
 Requires:     sed
 Requires:     iproute2
 Requires:     issue-generator

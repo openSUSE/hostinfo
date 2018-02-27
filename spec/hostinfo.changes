@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Feb 27 17:18:32 UTC 2018 - jason.record@suse.com
+
+- Added custom action
+
+-------------------------------------------------------------------
 Wed Feb 21 22:29:49 UTC 2018 - jason.record@suse.com
 
 - Start hostinfo.timer at install

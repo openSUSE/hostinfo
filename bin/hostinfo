@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 21
+# Modified:    2018 Feb 27
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.8'
+SVER='1.7.9'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -367,6 +367,22 @@ getSSHKeys() {
 	done
 }
 
+getCustom() {
+	BASE="${FILE_BASE}custom"
+	LAST=$(find $ISSUE_BASE -type f | sort | grep $BASE | tail -1)
+#	echo "LAST = $LAST"
+	NUM=$(awk -F- '{print $NF}' <<< $LAST)
+#	echo "NUM = $NUM"
+	NUM=$(printf "%d\n" $NUM)
+#	echo "NUM = $NUM"
+	NUM=$(printf "%02d\n" $(( $NUM + 1 )))
+#	echo "NUM = $NUM"
+	FILE_HOSTINFO="${ISSUE_BASE}/${BASE}-${NUM}"
+	LABEL="$1"
+	VALUE="$2"
+	printf "$FORMAT_OUT" "${LABEL}:" "${VALUE}" > $FILE_HOSTINFO
+}
+
 ##############################################################################
 # main
 ##############################################################################
@@ -390,6 +406,7 @@ case $OPT in
 	disk*) getDate; getDisks ;;
 	cpu*) getDate; getCPULoad ;;
 	ssh*) getDate; getSSHKeys ;;
+	cust*) getCustom "$2" "$3";;
 	all)
 		getDistribution
 		getDate

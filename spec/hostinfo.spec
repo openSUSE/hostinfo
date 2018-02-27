@@ -37,8 +37,8 @@ gzip -9f man/*8
 
 %install
 pwd;ls -la
-mkdir -p %{buildroot}%{_sysconfdir}/cron.hourly
 mkdir -p %{buildroot}%{_sbindir}
+mkdir -p %{buildroot}%{_sysconfdir}
 mkdir -p %{buildroot}%{_unitdir}
 mkdir -p %{buildroot}%{_presetdir}
 install -d %{buildroot}%{_mandir}/man8
@@ -48,7 +48,6 @@ install -m 644 conf/10-hostinfo.preset %{buildroot}%{_presetdir}
 install -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}
 install -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
-install -m 755 bin/hostinfo-refresh %{buildroot}%{_sysconfdir}/cron.hourly
 install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
 install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
@@ -59,7 +58,6 @@ install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 %{_unitdir}/hostinfo.timer
 %{_presetdir}/10-hostinfo.preset
 %config %{_sysconfdir}/hostinfo.conf
-%{_sysconfdir}/cron.hourly/hostinfo-refresh
 %{_mandir}/man8/*
 %dir %{_docdir}/%{name}
 %doc %{_docdir}/%{name}/*

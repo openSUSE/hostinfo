@@ -83,6 +83,5 @@ fi
 %postun
 %service_del_postun hostinfo.service hostinfo.timer
 
-
 %changelog
 

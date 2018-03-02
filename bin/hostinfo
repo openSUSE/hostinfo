@@ -369,18 +369,19 @@ getSSHKeys() {
 
 getCustom() {
 	BASE="${FILE_BASE}custom"
+	CUSTOM_LIMIT=9
 	LAST=$(find $ISSUE_BASE -type f | sort | grep $BASE | tail -1)
-#	echo "LAST = $LAST"
-	NUM=$(awk -F- '{print $NF}' <<< $LAST)
-#	echo "NUM = $NUM"
-	NUM=$(printf "%d\n" $NUM)
-#	echo "NUM = $NUM"
-	NUM=$(printf "%02d\n" $(( $NUM + 1 )))
-#	echo "NUM = $NUM"
-	FILE_HOSTINFO="${ISSUE_BASE}/${BASE}-${NUM}"
-	LABEL="$1"
-	VALUE="$2"
-	printf "$FORMAT_OUT" "${LABEL}:" "${VALUE}" > $FILE_HOSTINFO
+	[[ -n "$LAST" ]] && NUM=$(awk -F- '{print $NF}' <<< $LAST) || NUM=0
+	if (( NUM < CUSTOM_LIMIT )); then
+		(( NUM++ ))
+		FILE_HOSTINFO="${ISSUE_BASE}/${BASE}-${NUM}"
+		LABEL="$1"
+		VALUE="$2"
+		printf "$FORMAT_OUT" "${LABEL}:" "${VALUE}" > $FILE_HOSTINFO
+	else
+		echo "Error: Custom label exceeds limit of $CUSTOM_LIMIT"
+		exit 3
+	fi
 }
 
 ##############################################################################

@@ -1,6 +1,8 @@
 -------------------------------------------------------------------
-Fri Mar  2 18:04:50 UTC 2018 - jason.record@suse.com
+Fri Mar  2 19:48:11 UTC 2018 - jason.record@suse.com
 
+- Added cleanUp to catch all exits
+- Added pre-existing run check
 - Updated hostinfo.timer
 - Added custom action
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Feb 27
+# Modified:    2018 Mar 02
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.9'
+SVER='1.7.11'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -34,13 +34,18 @@ CONFIG_FILE='/etc/hostinfo.conf'
 ISSUE_BASE='/run/issue.d'
 FILE_HOSTINFO=''
 FILE_BASE="80-hostinfo-"
+HOSTINFO_PID="/run/hostinfo.pid"
+ERR_MISSING_CONFIG=2
+ERR_CUSTOM_LIMIT_EXCEEDED=3
+ERR_HOSTINFO_ACTIVE=4
 
 if [[ -s $CONFIG_FILE ]]
 then
 	. $CONFIG_FILE
 else
 	echo "Error: Missing $CONFIG_FILE"
-	exit 2
+	cleanUp
+	exit $ERR_MISSING_CONFIG
 fi
 
 ##############################################################################
@@ -62,6 +67,7 @@ getHelp()
 	echo " mem      Update memory information"
 	echo " cpu      Show current CPU load information"
 	echo " disk     Show list is storage devices and their size"
+	echo ' custom <label> <value> Creates a custom entry'
 	echo
 	echo " hostinfo v${SVER}"
 	echo
@@ -380,13 +386,21 @@ getCustom() {
 		printf "$FORMAT_OUT" "${LABEL}:" "${VALUE}" > $FILE_HOSTINFO
 	else
 		echo "Error: Custom label exceeds limit of $CUSTOM_LIMIT"
-		exit 3
+		cleanUp
+		exit $ERR_CUSTOM_LIMIT_EXCEEDED
 	fi
+}
+
+cleanUp() {
+	rm -f $UPDATES_TMP
+	/usr/sbin/issue-generator
+	rm -f $HOSTINFO_PID
 }
 
 ##############################################################################
 # main
 ##############################################################################
+[[ -s $HOSTINFO_PID ]] && exit $ERR_HOSTINFO_ACTIVE || echo $$ > $HOSTINFO_PID
 OPT="$1"
 [[ -z $OPT ]] && OPT="all"
 [[ -d ${ISSUE_BASE} ]] || mkdir -p ${ISSUE_BASE}
@@ -396,7 +410,7 @@ cd ${ISSUE_BASE}
 [[ -h 00-OS ]] || ln -sf ${SPACER} 00-OS
 [[ -h 90-OS ]] || ln -sf ${SPACER} 90-OS
 case $OPT in
-	-h|--h*|help) getHelp; exit ;;
+	-h|--h*|help) getHelp; cleanUp; exit ;;
 	dist*) getDate; getDistribution ;;
 	date) getDate ;;
 	host*) getDate; getHostname ;;
@@ -420,9 +434,7 @@ case $OPT in
 		getSSHKeys
 		getDisks
 		;;
-	*) getHelp; exit ;;
+	*) getHelp; cleanUp; exit ;;
 esac
-
-rm -f $UPDATES_TMP
-/usr/sbin/issue-generator
+cleanUp
 

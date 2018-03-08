@@ -49,6 +49,7 @@ install -D -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}/hostinfo.timer
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
 install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
 install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
+ln -sf service %{buildroot}%{_sbindir}/rchostinfo
 
 %files
 %defattr(-,root,root)

@@ -1,3 +1,0 @@
-enable hostinfo.service
-enable hostinfo.timer
-

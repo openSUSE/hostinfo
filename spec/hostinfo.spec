@@ -44,7 +44,6 @@ mkdir -p %{buildroot}%{_presetdir}
 install -d %{buildroot}%{_mandir}/man8
 install -d %{buildroot}%{_docdir}/%{name}
 install -m 644 conf/hostinfo.conf %{buildroot}%{_sysconfdir}
-install -m 644 conf/10-hostinfo.preset %{buildroot}%{_presetdir}
 install -D -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}/hostinfo.service
 install -D -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}/hostinfo.timer
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
@@ -56,7 +55,6 @@ install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 %{_sbindir}/hostinfo
 %{_unitdir}/hostinfo.service
 %{_unitdir}/hostinfo.timer
-%{_presetdir}/10-hostinfo.preset
 %config %{_sysconfdir}/hostinfo.conf
 %{_mandir}/man8/*
 %dir %{_docdir}/%{name}

@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Mar  8 18:25:17 UTC 2018 - jason.record@suse.com
+
+- Removed preset in favor of system presets
+
+-------------------------------------------------------------------
 Thu Mar  8 16:25:45 UTC 2018 - jason.record@suse.com
 
 - Added deConfigure for uninstall procedure

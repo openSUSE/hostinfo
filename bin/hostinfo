@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Mar 02
+# Modified:    2018 Mar 08
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.11'
+SVER='1.7.15'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -38,6 +38,8 @@ HOSTINFO_PID="/run/hostinfo.pid"
 ERR_MISSING_CONFIG=2
 ERR_CUSTOM_LIMIT_EXCEEDED=3
 ERR_HOSTINFO_ACTIVE=4
+
+trap deConfigure SIGTERM
 
 if [[ -s $CONFIG_FILE ]]
 then
@@ -397,6 +399,14 @@ cleanUp() {
 	rm -f $HOSTINFO_PID
 }
 
+deConfigure() {
+	rm -f /run/issue.d/80-hostinfo-*
+	rm -f /run/issue.d/00-OS
+	rm -f /run/issue.d/90-OS
+	/usr/sbin/issue-generator
+	exit 0
+}
+
 ##############################################################################
 # main
 ##############################################################################
@@ -421,6 +431,7 @@ case $OPT in
 	disk*) getDate; getDisks ;;
 	cpu*) getDate; getCPULoad ;;
 	ssh*) getDate; getSSHKeys ;;
+	Uninstalled) cleanUp; deConfigure ;;
 	cust*) getCustom "$2" "$3";;
 	all)
 		getDistribution

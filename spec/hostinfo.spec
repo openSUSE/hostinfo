@@ -45,8 +45,8 @@ install -d %{buildroot}%{_mandir}/man8
 install -d %{buildroot}%{_docdir}/%{name}
 install -m 644 conf/hostinfo.conf %{buildroot}%{_sysconfdir}
 install -m 644 conf/10-hostinfo.preset %{buildroot}%{_presetdir}
-install -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}
-install -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}
+install -D -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}/hostinfo.service
+install -D -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}/hostinfo.timer
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
 install -m 444 man/COPYING.GPLv2 %{buildroot}%{_docdir}/%{name}
 install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
@@ -67,18 +67,10 @@ install -m 644 man/*.8.gz %{buildroot}%{_mandir}/man8
 
 %post
 %service_add_post hostinfo.service hostinfo.timer
-if [ -x /usr/bin/systemctl ]; then
-	/usr/bin/systemctl start hostinfo.timer
-fi
 
 %preun
 %service_del_preun hostinfo.service hostinfo.timer
-rm -f /run/issue.d/80-hostinfo-*
-rm -f /run/issue.d/00-OS
-rm -f /run/issue.d/90-OS
-if [ -x /usr/sbin/issue-generator ]; then
-	/usr/sbin/issue-generator || :
-fi
+/usr/sbin/hostinfo Uninstalled
 
 %postun
 %service_del_postun hostinfo.service hostinfo.timer

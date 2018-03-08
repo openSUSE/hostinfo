@@ -54,6 +54,7 @@ ln -sf service %{buildroot}%{_sbindir}/rchostinfo
 %files
 %defattr(-,root,root)
 %{_sbindir}/hostinfo
+%{_sbindir}/rchostinfo
 %{_unitdir}/hostinfo.service
 %{_unitdir}/hostinfo.timer
 %config %{_sysconfdir}/hostinfo.conf

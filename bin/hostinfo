@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Mar 08
+# Modified:    2018 Mar 10
 
 ##############################################################################
 #  Copyright (C) 2018 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.20'
+SVER='1.7.25'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -38,6 +38,7 @@ HOSTINFO_PID="/run/hostinfo.pid"
 ERR_MISSING_CONFIG=2
 ERR_CUSTOM_LIMIT_EXCEEDED=3
 ERR_HOSTINFO_ACTIVE=4
+SCRIPT_NAME="${0##*/}"
 
 trap deConfigure SIGTERM
 
@@ -78,7 +79,7 @@ getHelp()
 getHostname()
 {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}03-host" 
-	printf "$FORMAT_OUT" "Hostname:" "\n" > $FILE_HOSTINFO
+	printf "$FORMAT_OUT" "Hostname:" "$HOSTNAME" > $FILE_HOSTINFO
 }
 
 getDate()
@@ -147,8 +148,8 @@ getKernel()
 		KERN_TAINT_STR="Not Tainted"
 	fi
 
-	printf "$FORMAT_OUT" "Kernel Version:" "\r" >> $FILE_HOSTINFO
-	printf "$FORMAT_OUT" " Architecture:" "\m" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" "Kernel Version:" "$(uname -r)" >> $FILE_HOSTINFO
+	printf "$FORMAT_OUT" " Architecture:" "$(uname -m)" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Installed:" "$KERN_DATE_STR" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Status:" "$KERN_TAINT_STR" >> $FILE_HOSTINFO
 }
@@ -399,11 +400,16 @@ cleanUp() {
 	rm -f $HOSTINFO_PID
 }
 
+putMOTD() {
+	cp /etc/issue /etc/motd
+}
+
 deConfigure() {
 	rm -f /run/issue.d/80-hostinfo-*
 	rm -f /run/issue.d/00-OS
 	rm -f /run/issue.d/90-OS
 	/usr/sbin/issue-generator
+	> /etc/motd
 	exit 0
 }
 
@@ -448,4 +454,5 @@ case $OPT in
 	*) getHelp; cleanUp; exit ;;
 esac
 cleanUp
+(( INCLUDE_MOTD )) && putMOTD || :
 

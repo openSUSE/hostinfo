@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sat Mar 10 17:55:17 UTC 2018 - jason.record@suse.com
+
+- Added 91-hostinfo.rules for network rules
+- Add INCLUDE_MOTD for message of the day
+
+-------------------------------------------------------------------
 Thu Mar  8 19:49:09 UTC 2018 - jason.record@suse.com
 
 - Added rchostinfo link

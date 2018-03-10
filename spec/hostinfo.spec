@@ -40,10 +40,11 @@ pwd;ls -la
 mkdir -p %{buildroot}%{_sbindir}
 mkdir -p %{buildroot}%{_sysconfdir}
 mkdir -p %{buildroot}%{_unitdir}
-mkdir -p %{buildroot}%{_presetdir}
+mkdir -p %{buildroot}%{_udevrulesdir}
 install -d %{buildroot}%{_mandir}/man8
 install -d %{buildroot}%{_docdir}/%{name}
 install -m 644 conf/hostinfo.conf %{buildroot}%{_sysconfdir}
+install -m 644 conf/91-hostinfo.rules %{buildroot}%{_udevrulesdir}/91-hostinfo.rules
 install -D -m 644 conf/hostinfo.service %{buildroot}%{_unitdir}/hostinfo.service
 install -D -m 644 conf/hostinfo.timer %{buildroot}%{_unitdir}/hostinfo.timer
 install -m 755 bin/hostinfo %{buildroot}%{_sbindir}
@@ -57,13 +58,14 @@ ln -sf service %{buildroot}%{_sbindir}/rchostinfo
 %{_sbindir}/rchostinfo
 %{_unitdir}/hostinfo.service
 %{_unitdir}/hostinfo.timer
+%{_udevrulesdir}/91-hostinfo.rules
 %config %{_sysconfdir}/hostinfo.conf
 %{_mandir}/man8/*
 %dir %{_docdir}/%{name}
 %doc %{_docdir}/%{name}/*
 
 %pre
-%service_add_pre hostinfo.service hostinfo.timer
+%service_add_pre hostinfo.service hosinfo.timer
 
 %post
 %service_add_post hostinfo.service hostinfo.timer

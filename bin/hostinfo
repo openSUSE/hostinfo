@@ -1,9 +1,9 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2014 Aug 14
+# Modified:    2018 Oct 11
 
 ##############################################################################
-#  Copyright (C) 2014 SUSE LLC
+#  Copyright (C) 2014-2018 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #  Authors/Contributors:
-#     Jason Record (jrecord@suse.com)
+#     Jason Record (jason.record@suse.com)
 #
 ##############################################################################
 
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.12
+SVER=1.0.14
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -129,8 +129,11 @@ showDistribution()
 showKernel()
 {
 	KERNEL_STR=$(uname -r)
-	KERN_RPM="kernel-$(echo $KERNEL_STR | awk -F- '{print $NF}')"
-	KERN_DATE=$(rpm -q --queryformat "%{INSTALLTIME:date}" $KERN_RPM 2>/dev/null)
+	KERN_TYPE="$(echo $KERNEL_STR | awk -F- '{print $NF}')"
+	KERN_VER=${KERNEL_STR/-${KERN_TYPE}/}
+	KERN_RPM="kernel-${KERN_TYPE}-${KERN_VER}"
+	KERN_DATE=$(rpm -q --queryformat "%{INSTALLTIME:date}" ${KERN_RPM}* 2>/dev/null)
+
 	if [[ -n "$KERN_DATE" ]]; then
 		KERN_DATE_STR="$KERN_DATE"
 	else

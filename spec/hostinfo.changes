@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Oct 11 13:57:49 UTC 2018 - jason.record@suse.com
+
+- Removd extra kernel install dates (bsc#1099498)
+
+-------------------------------------------------------------------
 Thu Aug 14 16:00:26 UTC 2014 - jrecord@suse.com
 
 - Fixed 3rd party detection (bnc#891604)

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Apr  9 16:48:37 UTC 2019 - jason.record@suse.com
+
+- Update version 1.0.1
+  * Resolved network bond issue (bsc#1054979)
+
+-------------------------------------------------------------------
 Thu Oct 11 13:57:49 UTC 2018 - jason.record@suse.com
 
 - Removd extra kernel install dates (bsc#1099498)

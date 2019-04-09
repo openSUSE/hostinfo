@@ -1,9 +1,9 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Oct 11
+# Modified:    2019 Apr 09
 
 ##############################################################################
-#  Copyright (C) 2014-2018 SUSE LLC
+#  Copyright (C) 2014-2019 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER=1.0.14
+SVER=1.0.15
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -196,6 +196,8 @@ showNetAddr()
 	IFACE=''
 	IADDR=''
 	SLAVE=0
+	LABEL=0
+	PATTERN=''
 	echo "$NET_LIST" | while read LINE
 	do
 		#echo "STATE=$STATE FIRST=$FIRST IFACE=$IFACE $LINE"
@@ -206,6 +208,13 @@ showNetAddr()
 				IFACE=$(echo $LINE | awk '{print $1}')
 				FIRST=0
 				[[ "$IFACE" == "lo" ]] && STATE=0
+				LABEL=$(echo $IFACE | awk '$1 ~ /:/ {print $1}'|wc -l)
+				if (( $LABEL > 0 ))
+				then
+					PATTERN="MTU:"
+				else
+					PATTERN="TX packet"
+				fi
 			elif echo "$LINE" | grep "^inet addr:" &>/dev/null
 			then
 				IADDR=$(echo $LINE | cut -d' ' -f2 | cut -d\: -f2)
@@ -214,7 +223,7 @@ showNetAddr()
 			elif echo "$LINE" | grep SLAVE &>/dev/null
 			then
 				SLAVE=1
-			elif echo "$LINE" | grep "TX packet" &>/dev/null
+			elif echo "$LINE" | grep "$PATTERN" &>/dev/null
 			then
 				if [[ -n "$IADDR" ]]
 				then
@@ -231,6 +240,8 @@ showNetAddr()
 				IADDR=''
 				STATE=0
 				FIRST=0
+				LABEL=0
+				PATTERN=''
 				if (( QUIET ))
 				then
 					printf "$FORMAT_OUT" "IPv4 Address:" "$IPADDR_STR" >> $FILE_ROOT_MOTD

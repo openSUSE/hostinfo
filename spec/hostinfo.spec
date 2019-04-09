@@ -1,6 +1,6 @@
 # spec file for package hostinfo
 #
-# Copyright (c) 2014 SUSE LLC
+# Copyright (c) 2019 SUSE LLC
 #
 # This file and all modifications and additions to the pristine
 # package are under the same license as the package itself.
@@ -14,7 +14,7 @@ URL:          https://github.com/g23guy/hostinfo
 Group:        System/Monitoring
 License:      GPL-2.0
 Autoreqprov:  on
-Version:      1.0
+Version:      1.0.1
 Release:      18
 Source:       %{name}-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2018 Mar 10
+# Modified:    2020 Apr 21
 
 ##############################################################################
-#  Copyright (C) 2018 SUSE LLC
+#  Copyright (C) 2018-2020 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.7.25'
+SVER='1.8.1'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -34,6 +34,7 @@ CONFIG_FILE='/etc/hostinfo.conf'
 ISSUE_BASE='/run/issue.d'
 FILE_HOSTINFO=''
 FILE_BASE="80-hostinfo-"
+FILE_MOTD="/etc/motd"
 HOSTINFO_PID="/run/hostinfo.pid"
 ERR_MISSING_CONFIG=2
 ERR_CUSTOM_LIMIT_EXCEEDED=3
@@ -161,7 +162,7 @@ getNetAddr() {
 		echo "Network ignored in $CONFIG_FILE"
 		return 0
 	else
-		rm -f /run/issue.d/70-[be]*conf
+		rm -f ${ISSUE_BASE}/70-[be]*conf
 		> $FILE_HOSTINFO
 	fi
 
@@ -365,7 +366,7 @@ getSSHKeys() {
 		echo "SSH keys ignored in $CONFIG_FILE"
 		return 0
 	else
-		rm -f /run/issue.d/60-ssh_host_keys.conf
+		rm -f ${ISSUE_BASE}/60-ssh_host_keys.conf
 		echo "SSH Host Keys" > $FILE_HOSTINFO
 	fi
 	for KEY_FILE in $(find /etc/ssh -name 'ssh_host_*_key' 2>/dev/null)
@@ -377,7 +378,7 @@ getSSHKeys() {
 }
 
 getCustom() {
-	BASE="${FILE_BASE}custom"
+	BASE="${FILE_BASE}99-custom"
 	CUSTOM_LIMIT=9
 	LAST=$(find $ISSUE_BASE -type f | sort | grep $BASE | tail -1)
 	[[ -n "$LAST" ]] && NUM=$(awk -F- '{print $NF}' <<< $LAST) || NUM=0
@@ -401,15 +402,20 @@ cleanUp() {
 }
 
 putMOTD() {
-	cp /etc/issue /etc/motd
+	> $FILE_MOTD
+	for FILE in $(ls -1 ${ISSUE_BASE}/${FILE_BASE}* | sort)
+	do
+		cat $FILE >> $FILE_MOTD
+	done
+	echo >> $FILE_MOTD
 }
 
 deConfigure() {
-	rm -f /run/issue.d/80-hostinfo-*
-	rm -f /run/issue.d/00-OS
-	rm -f /run/issue.d/90-OS
+	rm -f ${ISSUE_BASE}/80-hostinfo-*
+	rm -f ${ISSUE_BASE}/00-OS
+	rm -f ${ISSUE_BASE}/90-OS
 	/usr/sbin/issue-generator
-	> /etc/motd
+	> $FILE_MOTD
 	exit 0
 }
 

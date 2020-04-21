@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.1'
+SVER='1.8.2'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -352,10 +352,15 @@ getCPULoad() {
 		return 0
 	fi
 	CPU_COUNT=$(grep '^processor' /proc/cpuinfo 2>/dev/null | wc -l)
-	UP_TIME=($(uptime))
-	SUM=$(expr ${UP_TIME[-3]//[.,]/} + ${UP_TIME[-2]//[.,]/} + ${UP_TIME[-1]//[.,]/})
-	AVG=$(( SUM / 3 ))
-	PERCENT=$(( AVG / CPU_COUNT ))
+	UP_TIME_CNT=3
+	SUM=0
+	for TIME in $(uptime | awk '{print $(NF-2), $(NF-1), $NF}' | tr -d ',')
+	do
+		THIS_TIME=$(cut -d\. -f1 <<< $TIME)
+		SUM=$(( $SUM + $THIS_TIME ))
+	done
+	AVG=$(( $SUM / $UP_TIME_CNT ))
+	PERCENT=$(( $AVG * 100 / $CPU_COUNT ))
 	printf "$FORMAT_OUT" "CPU Load Average:" "$AVG (${PERCENT}%) with $CPU_COUNT CPUs" > $FILE_HOSTINFO
 }
 

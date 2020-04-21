@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.2'
+SVER='1.8.2_dev1'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -72,6 +72,9 @@ getHelp()
 	echo " cpu      Show current CPU load information"
 	echo " disk     Show list is storage devices and their size"
 	echo ' custom <label> <value> Creates a custom entry'
+}
+
+getVersion() {
 	echo
 	echo " hostinfo v${SVER}"
 	echo
@@ -438,19 +441,20 @@ cd ${ISSUE_BASE}
 [[ -h 90-OS ]] || ln -sf ${SPACER} 90-OS
 case $OPT in
 	-h|--h*|help) getHelp; cleanUp; exit ;;
-	dist*) getDate; getDistribution ;;
-	date) getDate ;;
-	host*) getDate; getHostname ;;
-	kern*) getDate; getKernel ;;
-	up*) getDate; getUpdates ;;
-	net*) getDate; getNetAddr ;;
-	mem*) getDate; getMemory ;;
-	disk*) getDate; getDisks ;;
-	cpu*) getDate; getCPULoad ;;
-	ssh*) getDate; getSSHKeys ;;
-	Uninstalled) cleanUp; deConfigure ;;
-	cust*) getCustom "$2" "$3";;
+	dist*) getVersion; getDate; getDistribution ;;
+	date) getVersion; getDate ;;
+	host*) getVersion; getDate; getHostname ;;
+	kern*) getVersion; getDate; getKernel ;;
+	up*) getVersion; getDate; getUpdates ;;
+	net*) getVersion; getDate; getNetAddr ;;
+	mem*) getVersion; getDate; getMemory ;;
+	disk*) getVersion; getDate; getDisks ;;
+	cpu*) getVersion; getDate; getCPULoad ;;
+	ssh*) getVersion; getDate; getSSHKeys ;;
+	Uninstalled) getVersion; cleanUp; deConfigure ;;
+	cust*) getVersion; getCustom "$2" "$3";;
 	all)
+		getVersion
 		getDistribution
 		getDate
 		getHostname
@@ -462,7 +466,7 @@ case $OPT in
 		getSSHKeys
 		getDisks
 		;;
-	*) getHelp; cleanUp; exit ;;
+	*) getHelp; getVersion; cleanUp; exit ;;
 esac
 cleanUp
 (( INCLUDE_MOTD )) && putMOTD || :

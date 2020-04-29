@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.4'
+SVER='1.8.5'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -40,6 +40,9 @@ ERR_MISSING_CONFIG=2
 ERR_CUSTOM_LIMIT_EXCEEDED=3
 ERR_HOSTINFO_ACTIVE=4
 SCRIPT_NAME="${0##*/}"
+PRODUCT_FILE="/etc/products.d/baseproduct"
+RELEASE_FILE='/etc/os-release'
+
 
 trap deConfigure SIGTERM
 
@@ -96,10 +99,9 @@ getDistribution()
 {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}01-distro" 
 	> $FILE_HOSTINFO
-	PRODUCT_FILE="/etc/products.d/baseproduct"
 	if [[ -s $PRODUCT_FILE ]]; then
-		SUMMARY=$(grep '<summary>' /etc/products.d/baseproduct 2>/dev/null)
-		PATCHLVL=$(grep '<patchlevel>' /etc/products.d/baseproduct 2>/dev/null)
+		SUMMARY=$(grep '<summary>' $PRODUCT_FILE 2>/dev/null)
+		PATCHLVL=$(grep '<patchlevel>' $PRODUCT_FILE 2>/dev/null)
 
 		SUMMARY=${SUMMARY#"${SUMMARY%%[![:space:]]*}"} # trim leading white space
 		PATCHLVL=${PATCHLVL#"${PATCHLVL%%[![:space:]]*}"} 
@@ -113,7 +115,6 @@ getDistribution()
 			printf "$FORMAT_OUT" "Distribution:" "$DIST SP${PATCHLVL}" >> $FILE_HOSTINFO
 		fi
 	else
-		RELEASE_FILE='/etc/os-release'
 		PRETTY_NAME=$(cat ${RELEASE_FILE} | grep PRETTY_NAME | cut -d\= -f2 | tr -d '"')
 		DIST=$(sed -e "s/ SP.//g" <<< $PRETTY_NAME)
 		SPSTR="0"
@@ -272,6 +273,12 @@ getUpdates()
 	> $FILE_HOSTINFO
 	UPDATES_TMP=$(mktemp /var/tmp/hostinfo-tmp.XXXXXXXXXX)
 	rpm -qa --queryformat "%{INSTALLTIME}|%{VENDOR}|%{NAME}\n" | sort -nr > $UPDATES_TMP
+	if [[ -s $RELEASE_FILE ]]; then
+		CPEID=$(grep 'CPE_NAME' $RELEASE_FILE 2>/dev/null | cut -d\: -f3 2>/dev/null)
+	else
+		CPEID=''
+	fi
+
 	PATCH_STRING=$(zypper --non-interactive --no-gpg-checks patch-check 2>/dev/null | tail -1 | grep -i patches 2>/dev/null)
 	LIP_EPOC=$(head -1 $UPDATES_TMP | cut -d\| -f1)
 	LIP_DATE=$(date '+%c' -d @${LIP_EPOC})
@@ -291,11 +298,20 @@ getUpdates()
 		PATCH_COUNT_NEEDED='Not Registered'
 		PATCH_COUNT_SECURITY='Not Registered'
 	fi
-	COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
 
 	printf "$FORMAT_OUT" "Last Installed Package:" "$LIP_DATE" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Patches Needed:" "$PATCH_COUNT_NEEDED" >> $FILE_HOSTINFO
 	printf "$FORMAT_OUT" " Security:" "$PATCH_COUNT_SECURITY" >> $FILE_HOSTINFO
+	case $CPEID in
+	suse)
+		COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^SUSE LLC|^SUSE Linux Enterprise|gpg-pubkey$" | wc -l)
+		;;
+	opensuse)
+		COUNT_NVR=$(awk -F\| '{print $2}' $UPDATES_TMP | egrep -iv "^opensuse|gpg-pubkey$" | wc -l)
+		;;
+	*)	COUNT_NVR="Unknown"
+		;;
+	esac
 	printf "$FORMAT_OUT" " 3rd Party Packages:" "$COUNT_NVR" >> $FILE_HOSTINFO
 }
 

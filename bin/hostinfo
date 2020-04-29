@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2020 Apr 21
+# Modified:    2020 Apr 29
 
 ##############################################################################
 #  Copyright (C) 2018-2020 SUSE LLC
@@ -26,7 +26,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.2_dev1'
+SVER='1.8.4'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -307,7 +307,6 @@ getMemory()
 		echo "Memory ignored in $CONFIG_FILE"
 		return 0
 	fi
-	echo "Memory" > $FILE_HOSTINFO
 	if [[ -x /usr/bin/free ]]
 	then
 		FREE=$(free -h | grep "^Mem")
@@ -321,11 +320,13 @@ getMemory()
 		CALC_AVAIL=${FREE_ARRAY[-1]}
 		MEM_PERCENT=$(printf "%i" $(( CALC_AVAIL * 100 / CALC_TOTAL )))
 
-		printf "$FORMAT_OUT" " Total/Free/Avail:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL} (${MEM_PERCENT}% Avail)" >> $FILE_HOSTINFO
+		printf "$FORMAT_OUT" "Memory" "${MEM_PERCENT}% Available" > $FILE_HOSTINFO
+		printf "$FORMAT_OUT" " Total/Free/Avail:" "${MEM_TOTAL}/${MEM_FREE}/${MEM_AVAIL}" >> $FILE_HOSTINFO
 	else
 		MEM_TOTAL=$(cat /proc/meminfo | grep MemTotal: | awk '{printf "%i", $2/1024}')
 		MEM_FREE=$(cat /proc/meminfo | grep MemFree: | awk '{printf "%i", $2/1024}')
 
+		echo "Memory" > $FILE_HOSTINFO
 		printf "$FORMAT_OUT" " Total/Free:" "${MEM_TOTAL}/${MEM_FREE} MB" >> $FILE_HOSTINFO
 	fi
 }

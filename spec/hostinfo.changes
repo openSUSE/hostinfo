@@ -1,7 +1,7 @@
 -------------------------------------------------------------------
-Wed Apr 29 18:17:24 UTC 2020 - jason.record@suse.com
+Mon Nov 23 16:22:47 UTC 2020 - jason.record@suse.com
 
-- Additions to version 1.0.5
+- Additions to version 1.0.6
   + Only include hostinfo details in /etc/motd (bsc#1170092)
   + Fixed CPU load average calculation (bsc#1170094)
   + Added program and version to output

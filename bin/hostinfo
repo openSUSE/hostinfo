@@ -1,9 +1,9 @@
 #!/bin/bash
 # Description: Displays basic system information
-# Modified:    2020 Apr 29
+# Modified:    2021 Mar 18
 
 ##############################################################################
-#  Copyright (C) 2018-2020 SUSE LLC
+#  Copyright (C) 2018-2021 SUSE LLC
 ##############################################################################
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #  Authors/Contributors:
-#     Jason Record (jason.record@suse.com)
+#     Jason Record <jason.record@suse.com>
 #
 ##############################################################################
 
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.5'
+SVER='1.8.5_dev1'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
@@ -60,9 +60,10 @@ fi
 ##############################################################################
 getHelp()
 {
-	echo "hostinfo - Gathers host information"
+	echo "DESCRIPTION: Gathers host information for issue generator and motd"
 	echo
-	echo "USAGE: hostinfo [command]"
+	echo "USAGE:       hostinfo [OPTION]"
+	echo
 	echo "OPTIONS"
 	echo " help     This help screen"
 	echo " all      All commands run (default)"
@@ -75,12 +76,13 @@ getHelp()
 	echo " cpu      Show current CPU load information"
 	echo " disk     Show list is storage devices and their size"
 	echo ' custom <label> <value> Creates a custom entry'
+	echo
 }
 
-getVersion() {
-	echo
-	echo " hostinfo v${SVER}"
-	echo
+title() {
+	echo "#######################################################################"
+	echo "# hostinfo v${SVER}"
+	echo "#######################################################################"
 }
 
 getHostname()
@@ -163,7 +165,7 @@ getNetAddr() {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}06-network" 
 	if (( IGNORE_NET )); then
 		rm -f $FILE_HOSTINFO
-		echo "Network ignored in $CONFIG_FILE"
+#		echo "Network ignored in $CONFIG_FILE"
 		return 0
 	else
 		rm -f ${ISSUE_BASE}/70-[be]*conf
@@ -267,7 +269,7 @@ getUpdates()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}05-updates" 
 	if (( IGNORE_UPDATES )); then
 		rm -f $FILE_HOSTINFO
-		echo "System updates ignored in $CONFIG_FILE"
+#		echo "System updates ignored in $CONFIG_FILE"
 		return 0
 	fi
 	> $FILE_HOSTINFO
@@ -320,7 +322,7 @@ getMemory()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}07-memory" 
 	if (( IGNORE_MEM )); then
 		rm -f $FILE_HOSTINFO
-		echo "Memory ignored in $CONFIG_FILE"
+#		echo "Memory ignored in $CONFIG_FILE"
 		return 0
 	fi
 	if [[ -x /usr/bin/free ]]
@@ -352,7 +354,7 @@ getDisks()
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}10-disks" 
 	if (( IGNORE_DISK )); then
 		rm -f $FILE_HOSTINFO
-		echo "Disk information ignored in $CONFIG_FILE"
+#		echo "Disk information ignored in $CONFIG_FILE"
 		return 0
 	fi
 	echo "Storage Devices" > $FILE_HOSTINFO
@@ -368,7 +370,7 @@ getCPULoad() {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}08-cpuload" 
 	if (( IGNORE_CPULOAD )); then
 		rm -f $FILE_HOSTINFO
-		echo "CPU load ignored in $CONFIG_FILE"
+#		echo "CPU load ignored in $CONFIG_FILE"
 		return 0
 	fi
 	CPU_COUNT=$(grep '^processor' /proc/cpuinfo 2>/dev/null | wc -l)
@@ -388,7 +390,7 @@ getSSHKeys() {
 	FILE_HOSTINFO="${ISSUE_BASE}/${FILE_BASE}09-sshkeys" 
 	if (( IGNORE_SSHKEYS )); then
 		rm -f $FILE_HOSTINFO
-		echo "SSH keys ignored in $CONFIG_FILE"
+#		echo "SSH keys ignored in $CONFIG_FILE"
 		return 0
 	else
 		rm -f ${ISSUE_BASE}/60-ssh_host_keys.conf
@@ -457,21 +459,20 @@ cd ${ISSUE_BASE}
 [[ -h 00-OS ]] || ln -sf ${SPACER} 00-OS
 [[ -h 90-OS ]] || ln -sf ${SPACER} 90-OS
 case $OPT in
-	-h|--h*|help) getHelp; cleanUp; exit ;;
-	dist*) getVersion; getDate; getDistribution ;;
-	date) getVersion; getDate ;;
-	host*) getVersion; getDate; getHostname ;;
-	kern*) getVersion; getDate; getKernel ;;
-	up*) getVersion; getDate; getUpdates ;;
-	net*) getVersion; getDate; getNetAddr ;;
-	mem*) getVersion; getDate; getMemory ;;
-	disk*) getVersion; getDate; getDisks ;;
-	cpu*) getVersion; getDate; getCPULoad ;;
-	ssh*) getVersion; getDate; getSSHKeys ;;
-	Uninstalled) getVersion; cleanUp; deConfigure ;;
-	cust*) getVersion; getCustom "$2" "$3";;
+	-h|--h*|help) title; getHelp; cleanUp; exit ;;
+	dist*) getDate; getDistribution ;;
+	date) getDate ;;
+	host*) getDate; getHostname ;;
+	kern*) getDate; getKernel ;;
+	up*) getDate; getUpdates ;;
+	net*) getDate; getNetAddr ;;
+	mem*) getDate; getMemory ;;
+	disk*) getDate; getDisks ;;
+	cpu*) getDate; getCPULoad ;;
+	ssh*) getDate; getSSHKeys ;;
+	Uninstalled) cleanUp; deConfigure ;;
+	cust*) getCustom "$2" "$3";;
 	all)
-		getVersion
 		getDistribution
 		getDate
 		getHostname
@@ -483,7 +484,7 @@ case $OPT in
 		getSSHKeys
 		getDisks
 		;;
-	*) getHelp; getVersion; cleanUp; exit ;;
+	*) title; getHelp; cleanUp; exit ;;
 esac
 cleanUp
 (( INCLUDE_MOTD )) && putMOTD || :

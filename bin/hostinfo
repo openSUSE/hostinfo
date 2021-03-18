@@ -26,12 +26,12 @@
 ##############################################################################
 # Variables
 ##############################################################################
-SVER='1.8.5_dev1'
+SVER='1.8.7'
 PAD=25
 QUIET=0
 FORMAT_OUT="%-${PAD}s %s\n"
 CONFIG_FILE='/etc/hostinfo.conf'
-ISSUE_BASE='/run/issue.d'
+ISSUE_BASE='/etc/issue.d'
 FILE_HOSTINFO=''
 FILE_BASE="80-hostinfo-"
 FILE_MOTD="/etc/motd"

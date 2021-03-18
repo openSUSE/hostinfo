@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Thu Mar 18 18:52:35 UTC 2021 - jason.record@gmail.com
+Thu Mar 18 18:57:03 UTC 2021 - jason.record@gmail.com
 
+- Host information now persistent across reboots (bsc#1183732)
 - Fixed output strings
 
 -------------------------------------------------------------------

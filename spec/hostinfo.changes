@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Oct  5 14:08:43 UTC 2021 - Jason Record <jason.record@suse.com>
+
+- Added hardening to systemd service file pq#2
+
+-------------------------------------------------------------------
 Thu Mar 18 18:57:03 UTC 2021 - jason.record@gmail.com
 
 - Host information now persistent across reboots (bsc#1183732)

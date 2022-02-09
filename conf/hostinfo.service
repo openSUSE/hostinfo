@@ -5,7 +5,7 @@ Wants=network.target
 After=network.target
 
 [Service]
-Type=oneshot
+Type=simple
 ProtectSystem=full
 ProtectHome=true
 PrivateDevices=true

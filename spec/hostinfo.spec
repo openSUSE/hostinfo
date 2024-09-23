@@ -1,4 +1,4 @@
-# 
+#
 # spec file for package hostinfo
 #
 # Copyright (c) 2022 SUSE LLC
@@ -12,23 +12,27 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-Name:         hostinfo
-Version:      1.0.7
-Release:      0
-Summary:      Gathers basic server information
-License:      GPL-2.0
-URL:          https://github.com/g23guy/hostinfo
-Group:        System/Monitoring
-Source:       %{name}-%{version}.tar.gz
-Requires:     sed
-Requires:     iproute2
-Requires:     issue-generator
-Buildarch:    noarch
+# Please submit bugfixes or comments via https://bugs.opensuse.org/
+#
+
+
+Name:           hostinfo
+Version:        1.0.7
+Release:        0
+Summary:        Gathers basic server information
+License:        GPL-2.0-only
+URL:            https://github.com/g23guy/hostinfo
+Group:          System/Monitoring
+Source:         %{name}-%{version}.tar.gz
+Requires:       iproute2
+Requires:       issue-generator
+Requires:       sed
+BuildArch:      noarch
 
 %description
-A script that displays current system information to help 
+A script that displays current system information to help
 identify a host and its resources.
- 
+
 %prep
 %setup -q
 
@@ -78,4 +82,3 @@ ln -sf service %{buildroot}%{_sbindir}/rchostinfo
 %service_del_postun hostinfo.service hostinfo.timer
 
 %changelog
-
